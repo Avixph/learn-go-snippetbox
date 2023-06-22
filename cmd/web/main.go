@@ -8,8 +8,7 @@ import (
 )
 
 // Define an application struct to hold the app-wide dependencies for the
-// web app. For now we'll only include feilds for the two custom loggers,
-// but  we'll add more to it as the build progresses.
+// web app. For now we'll only include feilds for the two custom loggers.
 type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
