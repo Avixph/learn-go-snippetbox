@@ -7,6 +7,14 @@ import (
 	"os"
 )
 
+// Define an application struct to hold the app-wide dependencies for the
+// web app. For now we'll only include feilds for the two custom loggers,
+// but  we'll add more to it as the build progresses.
+type application struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
+}
+
 func main() {
 	// Define a new comand-line flag with the name 'addr', a default value of
 	// ":4000" and some short help text explaining what the flag controls.
@@ -25,12 +33,18 @@ func main() {
 	// Stdout), a string prefix for message (INFO followed by tab), and
 	// flags to indicate what additional info ito include (local data and
 	// time). Note thatthe flags ae joined using the bitwise OR operator |.
-	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-
 	// Create a logger for writting error messages in the same way, but use
 	// stderr as the destination and use the log.Lshortfile to include the
 	// relevant file name and line number.
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "Error\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	// Initialize a new instance of our application struct, containing the
+	// dependencies
+	app := &application{
+		errorLog: errorLog,
+		infoLog:  infoLog,
+	}
 
 	// Use the http.NewServerMux() func to initialize a new servermux.
 	mux := http.NewServeMux()
@@ -47,9 +61,11 @@ func main() {
 
 	// Register the home, snippetView and snippetCreate funcs as handlers
 	// for the corrisponding URL patrerns with the servermux.
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
+	// Swap the route declearations to use the application struct's methods
+	// as the handler func.
+	mux.HandleFunc("/", app.home)
+	mux.HandleFunc("/snippet/view", app.snippetView)
+	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
 	// Initalize a new http.Server struct. We set the Addr and Handler
 	// fields so that the server uses the same network address and routes as
