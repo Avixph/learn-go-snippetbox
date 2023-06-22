@@ -1,2 +1,2 @@
-## Learn Golang
+### Learn Golang
 # Snippetbox
