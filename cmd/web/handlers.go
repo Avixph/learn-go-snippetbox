@@ -24,7 +24,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// Initialize a slice containing the paths to the two templates. It's
 	// important to note that the file containing our base template must be
 	// the "first" file in the slice.
-	tmplFiles := []string{
+	templateFiles := []string{
 		"./ui/html/base.html",
 		"./ui/html/components/nav.html",
 		"./ui/html/pages/home.html",
@@ -35,7 +35,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// store the templates in a template set. If there's an err, we log a
 	// detailed err message and use the http.Error() func to send a generic
 	// 500 Interanl Server Err response to the user.
-	ts, err := template.ParseFiles(tmplFiles...)
+	ts, err := template.ParseFiles(templateFiles...)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "Internal Server Error", 500)
