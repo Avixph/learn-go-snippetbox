@@ -13,12 +13,13 @@ import (
 // against *application.
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Check if the current request URL path exactly matches "/". If not, use
-	// the htp.NotFound() func to send a 404 respond to the client.
+	// the app.notFound() func to send a 404 respond to the client.
 	// Importantly, we then return from the handler. If we don't return, the
 	// handler would keep executing and also write "Hello from Snippetbox!" message
 	rup := r.URL.Path
 	if rup != "/" {
-		http.NotFound(w, r)
+		// Use the notFound() helper
+		app.notFound(w)
 		return
 	}
 
@@ -41,8 +42,8 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		// Because the home handler func is now a method against application
 		// it can access it's feilds, including the error loger. We'll write
 		// the log message to this instead of the standard logger.
-		app.errorLog.Print(err.Error())
-		http.Error(w, "Internal Server Error", 500)
+		// Use ther serverError() helper
+		app.serverError(w, err)
 		return
 	}
 
@@ -52,8 +53,8 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Also update the code hre to use the error logger from the
 		// application struct.
-		app.errorLog.Print(err.Error())
-		http.Error(w, "Internal Server Error", 500)
+		// Use the app.serverError() helper
+		app.serverError(w, err)
 	}
 }
 
@@ -67,7 +68,8 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// page not found response.
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 0 {
-		http.NotFound(w, r)
+		// Use the notFound() helper
+		app.notFound(w)
 		return
 	}
 
@@ -88,9 +90,8 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 		// the second rarameter is the header value.
 		w.Header().Set("Allow", http.MethodPost)
 
-		// // If it's not, use the http.Error() func to send a 405 status code
-		// and "Method Not Allowed!" string as the response body.
-		http.Error(w, "Method not Allowed!", http.StatusMethodNotAllowed)
+		// If it's not, use the clientError() helper to send a 405 status code
+		app.clientError(w, http.StatusMethodNotAllowed)
 		return
 	}
 	w.Write([]byte("Create a new snippet..."))
