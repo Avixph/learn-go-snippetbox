@@ -71,3 +71,11 @@ func main() {
 	err := srv.ListenAndServe()
 	errorLog.Fatal(err)
 }
+
+// INSERT INTO snippets (title, content, created_on, updated_on, expires_on) VALUES (
+//     'First autumn morning',
+//     'First autumn morning\nthe mirror I stare into\nshows my father''s face.\n\n– Murakami Kijo',
+//     (now() at time zone 'utc'),
+//     (now() at time zone 'utc'),
+// 		(now() at time zone 'utc' + interval '7 day') 
+// );
