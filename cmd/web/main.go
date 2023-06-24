@@ -7,14 +7,19 @@ import (
 	"net/http"
 	"os"
 
+	// Import the models package that we created.
+	"github.com/Avixph/learn-go-snippetbox/internal/models"
 	_ "github.com/lib/pq"
 )
 
 // Define an application struct to hold the app-wide dependencies for the
 // web app. For now we'll only include feilds for the two custom loggers.
+// Add a snippets field to the application struct. This will allow us to make
+// the SnippetModel object available to our handlers.
 type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
+	snippets *models.SnippetModel
 }
 
 func main() {
@@ -58,10 +63,13 @@ func main() {
 	defer db.Close()
 
 	// Initialize a new instance of our application struct, containing the
-	// dependencies
+	// dependencies.
+	// Initialize a models.SnippetModel instance and add it to the application
+	// dependencies.
 	app := &application{
 		errorLog: errorLog,
 		infoLog:  infoLog,
+		snippets: &models.SnippetModel{DB: db},
 	}
 
 	// Initalize a new http.Server struct. We set the Addr and Handler
