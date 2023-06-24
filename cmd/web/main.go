@@ -1,10 +1,13 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"log"
 	"net/http"
 	"os"
+
+	_ "github.com/lib/pq"
 )
 
 // Define an application struct to hold the app-wide dependencies for the
@@ -18,10 +21,11 @@ func main() {
 	// Define a new comand-line flag with the name 'addr', a default value of
 	// ":4000" and some short help text explaining what the flag controls.
 	// The value of the flag will be stored in the addr var at runtime.
-	addr := flag.String("addr", ":4000", "HTTP network address")
+	// Use the getEnvVariables() helper
+	addr := flag.String("addr", getEnvVariables("LOCAL_PORT"), "HTTP network address")
 
 	// Define a new command-line flag for the PostgreSQL DSN string.
-	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "PostgresSQL data source name")
+	dsn := flag.String("dsn", getEnvVariables("DATABASE_URL"), "PostgresSQL data source name")
 
 	// Importantly, we use the flag.Parse() func to parse the command-line
 	// flag. This reads in the command-line flag value and assigns it to the
@@ -40,6 +44,18 @@ func main() {
 	// relevant file name and line number.
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "Error\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	// To keep the main() func tidy the code for creating a connection pool was
+	// placed into a seperate openDB() func. WE pass opewnDB() the DSN from the
+	// command-line flag.
+	db, err := openDB(*dsn)
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
+	// We also defer a call to the db.Close(), so that the connection pool is
+	// closed before the main() func exits.
+	defer db.Close()
 
 	// Initialize a new instance of our application struct, containing the
 	// dependencies
@@ -70,9 +86,25 @@ func main() {
 	// created. If http. listenAndServe() returns an err we use the errorLog.
 	// Fatal() func to log the err message and exit. Note that any err
 	// returned by http. listenAndServe() is always non-nill.
+	// Because the err var is already declared above, we need to use the
+	// assignment operator "=" here, instead of ":=" 'declare and assigng'
 	infoLog.Printf("Starting server on http://localhost%s", *addr)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
+}
+
+// The openDB() func wraps sql.Open() and returns a sql.DB connection pool for
+// the given DSN.
+func openDB(dsn string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		return nil, err
+	}
+	// Use the db.Ping() method to create a connection and check for any errors.
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return db, nil
 }
 
 // For postgres
