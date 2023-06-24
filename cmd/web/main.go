@@ -20,6 +20,9 @@ func main() {
 	// The value of the flag will be stored in the addr var at runtime.
 	addr := flag.String("addr", ":4000", "HTTP network address")
 
+	// Define a new command-line flag for the PostgreSQL DSN string.
+	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "PostgresSQL data source name")
+
 	// Importantly, we use the flag.Parse() func to parse the command-line
 	// flag. This reads in the command-line flag value and assigns it to the
 	// addr var. You need to call this *before* you use the addr var
@@ -72,10 +75,11 @@ func main() {
 	errorLog.Fatal(err)
 }
 
+// For postgres
 // INSERT INTO snippets (title, content, created_on, updated_on, expires_on) VALUES (
 //     'First autumn morning',
 //     'First autumn morning\nthe mirror I stare into\nshows my father''s face.\n\n– Murakami Kijo',
 //     (now() at time zone 'utc'),
 //     (now() at time zone 'utc'),
-// 		(now() at time zone 'utc' + interval '7 day') 
+// 		(now() at time zone 'utc' + interval '7 day')
 // );
