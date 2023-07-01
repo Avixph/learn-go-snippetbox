@@ -108,18 +108,10 @@ func openDB(dsn string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	// Use the db.Ping() method to create a connection and check for any errors.
 	if err = db.Ping(); err != nil {
 		return nil, err
 	}
 	return db, nil
 }
-
-// For postgres
-// INSERT INTO snippets (title, content, created_on, updated_on, expires_on) VALUES (
-//     'First autumn morning',
-//     'First autumn morning\nthe mirror I stare into\nshows my father''s face.\n\n– Murakami Kijo',
-//     (now() at time zone 'utc'),
-//     (now() at time zone 'utc'),
-// 		(now() at time zone 'utc' + interval '7 day')
-// );

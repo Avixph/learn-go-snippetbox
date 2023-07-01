@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"strconv"
+
+	"github.com/google/uuid"
 )
 
 // Define a home handler func that writes a byte slice containing
@@ -63,11 +64,20 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 // method against *application.
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// Extract the value of the id parameter from the query string and try to
-	// convert it to an integer using the strconv.Atoi() func. If it can't be
-	// converted to an integer, or it's value is less than 0, we return a 404
-	// page not found response.
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	if err != nil || id < 0 {
+	// convert it to uuid using the uuid.MustParse) func. If it's value is less than nil, we return a 404 page not found response.
+	// id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	// if err != nil || id < 0 {
+	// 	// Use the notFound() helper
+	// 	app.notFound(w)
+	// 	return
+	// }
+	urlVal := r.URL.Query().Get("id")
+	// fmt.Println("your value", urlVal)
+	// fmt.Printf("your url value is of type %T\n", urlVal)
+	id := uuid.MustParse(urlVal)
+	// fmt.Println("your id", id)
+	// fmt.Printf("your id is of type %T\n", id)
+	if id != uuid.Nil {
 		// Use the notFound() helper
 		app.notFound(w)
 		return
@@ -94,5 +104,22 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 		app.clientError(w, http.StatusMethodNotAllowed)
 		return
 	}
-	w.Write([]byte("Create a new snippet..."))
+
+	// Create a few vars holding dummy data. We'll remove these later on
+	// during the build.
+	title := "0 snails"
+	content := ") snails\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
+	expireVal := 7
+
+	// Pass the data to the SnippetModel.Insert() method, receive the ID of
+	// the new record back.
+	id, err := app.snippets.Insert(title, content, expireVal)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	// w.Write([]byte("Create a new snippet..."))
+	// Rediect the user to the relevant page for the snippet.
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
 }
