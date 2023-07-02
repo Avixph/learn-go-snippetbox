@@ -71,10 +71,7 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// 	app.notFound(w)
 	// 	return
 	// }
-	urlVal := r.URL.Query().Get("id")
-	// fmt.Println("your value", urlVal)
-	// fmt.Printf("your url value is of type %T\n", urlVal)
-	id := uuid.MustParse(urlVal)
+	id := uuid.MustParse(r.URL.Query().Get("id"))
 	// fmt.Println("your id", id)
 	// fmt.Printf("your id is of type %T\n", id)
 	if id != uuid.Nil {
@@ -108,7 +105,7 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	// Create a few vars holding dummy data. We'll remove these later on
 	// during the build.
 	title := "0 snails"
-	content := ") snails\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
+	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
 	expireVal := 7
 
 	// Pass the data to the SnippetModel.Insert() method, receive the ID of
@@ -121,5 +118,5 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 
 	// w.Write([]byte("Create a new snippet..."))
 	// Rediect the user to the relevant page for the snippet.
-	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%v", id), http.StatusSeeOther)
 }

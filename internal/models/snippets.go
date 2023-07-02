@@ -24,10 +24,10 @@ type SnippetModel struct {
 }
 
 // The Insert() method will insert a new snippet into the database.
-func (m *SnippetModel) Insert(title string, content string, expireVal int) (uuid.UUID, error) {
+func (m *SnippetModel) Insert(title string, content string, expireVal int) (string, error) {
 	// Define the SQL query we want to execute.
 	query := `INSERT INTO snippets (title, content, created_on, expires_on)
-		VALUES ($1, $2, (now() at time zone 'utc'), (now() at time zone 'utc' + interval '$3 day'))
+		VALUES ($1, $2, (now() at time zone 'utc'), (now() at time zone 'utc' + $3 * interval '1 day'))
 		RETURNING ID`
 
 	// Create an args slice containing the values for the placeholder
@@ -46,12 +46,12 @@ func (m *SnippetModel) Insert(title string, content string, expireVal int) (uuid
 	row := m.DB.QueryRow(query, args...)
 	err := row.Scan(&id)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil.String(), err
 	}
 
-	// The returned id has a type UUID
-	// return id, nil
-	return id, nil
+	// The id returned has the tpe uuid, so we convert it to a string type
+	// before returning
+	return id.String(), nil
 }
 
 // The Get() method will return a specific snippet from the database.
