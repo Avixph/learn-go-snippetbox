@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -56,7 +57,38 @@ func (m *SnippetModel) Insert(title string, content string, expireVal int) (stri
 
 // The Get() method will return a specific snippet from the database.
 func (m *SnippetModel) Get(id uuid.UUID) (*Snippet, error) {
-	return nil, nil
+	// Define the SQL query we want to execute.
+	query := `SELECT id, title, content, created_on, expires_on FROM snippets
+	WHERE expires_on > now() AND id = $1`
+
+	// Use the QueryRow() method on the connection pool to execute the query,
+	// passing in the untrusted id variable as the value for the placeholder
+	// parameter. This returns a pointer to a sql.Row object which holds the
+	// result from the database.
+	row := m.DB.QueryRow(query, id)
+
+	// Initialize a pointer to a new zeroed Snippet struct.
+	s := &Snippet{}
+
+	// Use row.Scan() to copy the values from each field in sql.Row to the
+	// corresponding field in the Snippet struct. Notice that the arguments
+	// to row.Scan() are *pointers* to the place we want to copy the data
+	// into, and the number of arguments must be exactly the same as the
+	// number of columns returned by the statement.
+	err := row.Scan(&s.ID, &s.Title, &s.Content, &s.Created_On, &s.Expires_On)
+	if err != nil {
+		// If the query returns no rows, the row.Scan() will return a
+		// sql.ErrNoRows err. We use the errors.Is() func to check for that
+		// err specificallly, and retun our own ErrNoRecord err instead.
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	// If everything goes ok then we return the Snippet object.
+	return s, nil
 }
 
 // The Latest() method will return the 10 most recently created snippets.

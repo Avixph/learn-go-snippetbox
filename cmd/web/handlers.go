@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
 
+	"github.com/Avixph/learn-go-snippetbox/internal/models"
 	"github.com/google/uuid"
 )
 
@@ -64,25 +66,30 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 // method against *application.
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// Extract the value of the id parameter from the query string and try to
-	// convert it to uuid using the uuid.MustParse) func. If it's value is less than nil, we return a 404 page not found response.
-	// id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	// if err != nil || id < 0 {
-	// 	// Use the notFound() helper
-	// 	app.notFound(w)
-	// 	return
-	// }
-	id := uuid.MustParse(r.URL.Query().Get("id"))
-	// fmt.Println("your id", id)
-	// fmt.Printf("your id is of type %T\n", id)
-	if id != uuid.Nil {
+	// convert it to uuid using the uuid.Parse() func. If it's value is less than nil, we return a 404 page not found response.
+	id, err := uuid.Parse(r.URL.Query().Get("id"))
+	if err != nil {
 		// Use the notFound() helper
 		app.notFound(w)
 		return
 	}
 
-	// Use the fmt.Fprintf() func to interpolate the id value with our
-	// response and write it to the http.ResponseWriter.
-	fmt.Fprintf(w, "Displaying a specific snippet with ID# %d...", id)
+	// Use the SnippetModel object's Get method to retrieve the data for a
+	// specific record based on its ID. If no matching record is found, then
+	// return a 404 Not Found response.
+	snippet, err := app.snippets.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	// Use the fmt.Fprintf() func to write the snippet data as a plain-text
+	// HTTP response body.
+	fmt.Fprintf(w, "%+v", snippet)
 }
 
 // Define snippetCreate handler func
