@@ -50,7 +50,7 @@ func (m *SnippetModel) Insert(title string, content string, expireVal int) (stri
 		return uuid.Nil.String(), err
 	}
 
-	// The id returned has the tpe uuid, so we convert it to a string type
+	// The id returned has the type uuid, so we convert it to a string type
 	// before returning
 	return id.String(), nil
 }
