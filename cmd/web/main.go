@@ -34,7 +34,7 @@ func main() {
 
 	// Importantly, we use the flag.Parse() func to parse the command-line
 	// flag. This reads in the command-line flag value and assigns it to the
-	// addr var. You need to call this *before* you use the addr var
+	// addr var. We need to call this *before* using the addr var
 	// otherwise it will always contain the default value of ":4000". If any
 	// errs are encounted during parsing the application will be terminated.
 	flag.Parse()

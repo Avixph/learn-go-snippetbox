@@ -3,7 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
+
+	// "html/template"
 	"net/http"
 
 	"github.com/Avixph/learn-go-snippetbox/internal/models"
@@ -26,39 +27,49 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	snippets, err := app.snippets.Latest()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	for _, snippet := range snippets {
+		fmt.Fprintf(w, "%+v\n", snippet)
+	}
+
 	// Initialize a slice containing the paths to the two templates. It's
 	// important to note that the file containing our base template must be
 	// the "first" file in the slice.
-	templateFiles := []string{
-		"./ui/html/base.html",
-		"./ui/html/components/nav.html",
-		"./ui/html/pages/home.html",
-		"./ui/html/components/footer.html",
-	}
+	// templateFiles := []string{
+	// 	"./ui/html/base.html",
+	// 	"./ui/html/components/nav.html",
+	// 	"./ui/html/pages/home.html",
+	// 	"./ui/html/components/footer.html",
+	// }
 
 	// Use the template.ParseFiles() func to read the template files and
 	// store the templates in a template set. If there's an err, we log a
 	// detailed err message and use the http.Error() func to send a generic
 	// 500 Interanl Server Err response to the user.
-	ts, err := template.ParseFiles(templateFiles...)
-	if err != nil {
-		// Because the home handler func is now a method against application
-		// it can access it's feilds, including the error loger. We'll write
-		// the log message to this instead of the standard logger.
-		// Use ther serverError() helper
-		app.serverError(w, err)
-		return
-	}
+	// ts, err := template.ParseFiles(templateFiles...)
+	// if err != nil {
+	// 	// Because the home handler func is now a method against application
+	// 	// it can access it's feilds, including the error loger. We'll write
+	// 	// the log message to this instead of the standard logger.
+	// 	// Use ther serverError() helper
+	// 	app.serverError(w, err)
+	// 	return
+	// }
 
 	// We then use the ExecuteTemplate() method to write the content of the
 	// "base" template as the response body.
-	err = ts.ExecuteTemplate(w, "base", nil)
-	if err != nil {
-		// Also update the code hre to use the error logger from the
-		// application struct.
-		// Use the app.serverError() helper
-		app.serverError(w, err)
-	}
+	// err = ts.ExecuteTemplate(w, "base", nil)
+	// if err != nil {
+	// 	// Also update the code hre to use the error logger from the
+	// 	// application struct.
+	// 	// Use the app.serverError() helper
+	// 	app.serverError(w, err)
+	// }
 }
 
 // Define a snippetView handler func
