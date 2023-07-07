@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"runtime/debug"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -44,4 +46,47 @@ func getEnvVariables(key string) string {
 		log.Fatalf("No .env file found!")
 	}
 	return os.Getenv(key)
+}
+
+func (app *application) render(w http.ResponseWriter, status int, page string, data *templateData) {
+	// Retrieve the appropiate set from the cache based on the page name (ex:
+	// 'home.html'). If no entrry exists in the cache withthe provided name,
+	// then create a new err and call the serverError() helper method.
+	ts, ok := app.templateCache[page]
+	if !ok {
+		err := fmt.Errorf("the template %s does not exist", page)
+		app.serverError(w, err)
+		return
+	}
+
+	// Initialize a new buffer.
+	buff := new(bytes.Buffer)
+
+	// Write the template to the buffer, instead of a straight to the http.
+	// ResponseWriter. If an err occurs, call the serverError() helper and
+	// then return.
+	err := ts.ExecuteTemplate(buff, "base", data)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	// If the template is written to the buffer without err, then we are safe
+	// to go ahead and write out the provided HTTP status code ('200 OK', '400
+	// Bad Request' etc) to the http.ResponseWriter.
+	w.WriteHeader(status)
+
+	// Write the contents of the buffer to the http.ResponseWriter. Note: this
+	// is another time where we pass our http.ResponseWriter to a function
+	// that takes an io.Writer.
+	buff.WriteTo(w)
+}
+
+// Create a newTemplateData() helper, which returns a pointer to a
+// templateData struct initialized with the current year. Note: we're not
+// using the *http.Request parameter here at the moment, but we will later.
+func (app *application) newTemplateData(r *http.Request) *templateData {
+	return &templateData{
+		CurrentYear: time.Now().Year(),
+	}
 }
