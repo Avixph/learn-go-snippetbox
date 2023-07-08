@@ -281,12 +281,12 @@ table {
     background: white;
     border: 1px solid #E4E5E7;
     border-collapse: collapse;
-    width: 100%;
+    width: 110%;
 }
 
 td, th {
     text-align: left;
-    padding: 9px 18px;
+    padding: 12px 21px;
 }
 
 th:last-child, td:last-child {

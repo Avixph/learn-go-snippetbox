@@ -3,6 +3,7 @@ package main
 import (
 	"html/template"
 	"path/filepath"
+	"time"
 
 	"github.com/Avixph/learn-go-snippetbox/internal/models"
 )
@@ -14,6 +15,19 @@ type templateData struct {
 	CurrentYear int
 	Snippet     *models.Snippet
 	Snippets    []*models.Snippet
+}
+
+// Create a humanDate func that returns a nicely formatted string
+// representation of time.Time object.
+func humanDate(t time.Time) string {
+	return t.Format("02 Jan 2006 at 15:04")
+}
+
+// Initialize a template.FuncMap object and store it in a global variable.
+// This is essentially a string-keyed map that acts as a lookup between the
+// names of our custom template funcs and the funcs themselves.
+var templFunctions = template.FuncMap{
+	"humanDate": humanDate,
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
@@ -35,38 +49,42 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// assign it to the name variable.
 		name := filepath.Base(page)
 
-		// Parse the base template file into a template set.
-		// ts, err := template.ParseFiles("./ui/html/base.html")
+		// The template.FuncMap must be registered with the template set before calling the ParseFiles() method. This means we have to use template.New() to create an empty template set, use the Funcs() method to register the template.FuncMap, and then parse the tempalte file.
+		// ts, err := template.New(name).Funcs(templFunctions).ParseFiles("./ui/html/base.html")
 		// if err != nil {
 		// 	return nil, err
 		// }
-
-		// Call ParseGlob() *on this template set* to add any componemts.
-		// ts, err = template.ParseGlob("./ui/html/components/*.html")
-		// if err != nil {
-		// 	return nil, err
-		// }
-
-		// Call ParseFile() *on this template set* to add the page template.
-		// ts, err = template.ParseFiles(page)
-		// if err != nil {
-		// 	return nil, err
-		// }
-
-		// Create a slice containing the filepaths for our base template, any
-		// partials and the page.
-		tmplFiles := []string{
-			"./ui/html/base.html",
-			"./ui/html/components/nav.html",
-			page,
-			"./ui/html/components/footer.html",
-		}
-
-		// Parse the files into a template set.
-		ts, err := template.ParseFiles(tmplFiles...)
+		ts, err := template.New(name).Funcs(templFunctions).ParseFiles("./ui/html/base.html")
 		if err != nil {
 			return nil, err
 		}
+
+		// Call ParseGlob() *on this template set* to add any componemts.
+		ts, err = ts.ParseGlob("./ui/html/components/*.html")
+		if err != nil {
+			return nil, err
+		}
+
+		// Call ParseFile() *on this template set* to add the page template.
+		ts, err = ts.ParseFiles(page)
+		if err != nil {
+			return nil, err
+		}
+
+		// Create a slice containing the filepaths for our base template, any
+		// partials and the page.
+		// tmplFiles := []string{
+		// 	"./ui/html/base.html",
+		// 	"./ui/html/components/nav.html",
+		// 	page,
+		// 	"./ui/html/components/footer.html",
+		// }
+
+		// Parse the files into a template set.
+		// ts, err := template.ParseFiles(tmplFiles...)
+		// if err != nil {
+		// 	return nil, err
+		// }
 
 		// Add the tempalte set to the map, using the name of the page (ex:
 		// 'home.html') as the key.
