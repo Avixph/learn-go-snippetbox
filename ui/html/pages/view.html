@@ -1,0 +1,18 @@
+{{define "title"}}Snippet #{{.Snippet.ID}}{{end}} {{define "main"}} {{with
+.Snippet}}
+<div class="snippet">
+  <div class="metadata">
+    <strong>{{.Title}}</strong>
+    <span>#{{.ID}}</span>
+  </div>
+  <pre>
+      <code>{{.Content}}</code>
+    </pre
+  >
+  <div class="metadata">
+    <!-- Use the new template func -->
+    <time>Created on: {{humanDate .Created_On}}</time>
+    <time>Expires on: {{humanDate .Expires_On}}</time>
+  </div>
+</div>
+{{end}} {{end}}
