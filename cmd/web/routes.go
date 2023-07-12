@@ -2,8 +2,8 @@ package main
 
 import "net/http"
 
-// The routes() method returns a servermux containing our application routes.
-func (app *application) routes() *http.ServeMux {
+// The routes() method returns a http.Handler containing our application routes.
+func (app *application) routes() http.Handler {
 	// Use the http.NewServerMux() func to initialize a new servermux.
 	mux := http.NewServeMux()
 
@@ -17,13 +17,15 @@ func (app *application) routes() *http.ServeMux {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	// Register the home, snippetView and snippetCreate funcs as handlers
-	// for the corrisponding URL patrerns with the servermux.
-	// Swap the route declearations to use the application struct's methods
-	// as the handler func.
+	// Register the home, snippetView and snippetCreate funcs as handlers for the
+	// corrisponding URL patrerns with the servermux. Swap the route
+	// declearations to use the application struct's methods as the handler func.
 	mux.HandleFunc("/", app.home)
 	mux.HandleFunc("/snippet/view", app.snippetView)
 	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
-	return mux
+	// Pass ther servermux as the 'next' parameter to the secureheaders middleware.
+	// Because secureHeaders is just a func, and the func returns an http.Handler we
+	// don't need to do anything else.
+	return secureHeader(mux)
 }
