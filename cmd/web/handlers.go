@@ -8,6 +8,7 @@ import (
 
 	"github.com/Avixph/learn-go-snippetbox/internal/models"
 	"github.com/google/uuid"
+	"github.com/julienschmidt/httprouter"
 )
 
 // Define a home handler func that writes a byte slice containing
@@ -15,16 +16,8 @@ import (
 // Change the signature if the home handler so it is defined as a method
 // against *application.
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	// Check if the current request URL path exactly matches "/". If not, use
-	// the app.notFound() func to send a 404 respond to the client.
-	// Importantly, we then return from the handler. If we don't return, the
-	// handler would keep executing and also write "Hello from Snippetbox!" message
-	rup := r.URL.Path
-	if rup != "/" {
-		// Use the notFound() helper
-		app.notFound(w)
-		return
-	}
+	// Because httprouter matches the "/" path exactly, we don't need the manual
+	// check of `if r.URL.Path != "/"` from the handler.
 
 	snippets, err := app.snippets.Latest()
 	if err != nil {
@@ -46,9 +39,14 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 // Change the signature if the snippetView handler so it is defined as a
 // method against *application.
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
-	// Extract the value of the id parameter from the query string and try to
-	// convert it to uuid using the uuid.Parse() func. If it's value is less than nil, we return a 404 page not found response.
-	id, err := uuid.Parse(r.URL.Query().Get("id"))
+	// When httprouter is parsing a request, the values of any name parameters
+	// will be stored in the request context. We can use the ParamsFromContext()
+	// func to retrieve a slice containing these parameter names and values.
+	params := httprouter.ParamsFromContext(r.Context())
+
+	// We can use the ByName() method to get the value of the "id" named parameter
+	// from the slice and validate it as normal.
+	id, err := uuid.Parse(params.ByName("id"))
 	if err != nil {
 		// Use the notFound() helper
 		app.notFound(w)
@@ -78,22 +76,17 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "view.html", TemplData)
 }
 
+// Define snippetCreateForm handler func, which for now returns a placeholder.
+func (app *application) snippetCreateForm(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Display the form for creating a new snippet..."))
+}
+
 // Define snippetCreate handler func
 // Change the signature if the snippetCreate handler so it is defined as a
 // method against *application.
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	// Use r.Method to check whether the request is using POST or not.
-	rm := r.Method
-	if rm != http.MethodPost {
-		// Use the Header().Set() method to add a 'Allow: POST' header to the
-		// response header map. The first parameter is the header name, and
-		// the second rarameter is the header value.
-		w.Header().Set("Allow", http.MethodPost)
-
-		// If it's not, use the clientError() helper to send a 405 status code
-		app.clientError(w, http.StatusMethodNotAllowed)
-		return
-	}
+	// Checking if the request method is a POST is now superfluous, because
+	// this is done by httprouter automatically.
 
 	// Create a few vars holding dummy data. We'll remove these later on
 	// during the build.
@@ -111,5 +104,6 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 
 	// w.Write([]byte("Create a new snippet..."))
 	// Rediect the user to the relevant page for the snippet.
-	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%v", id), http.StatusSeeOther)
+	// Update the redirect path to use the new clean URL format.
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%v", id), http.StatusSeeOther)
 }
