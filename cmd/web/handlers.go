@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"net/http"
 
@@ -87,14 +88,38 @@ func (app *application) snippetCreateForm(w http.ResponseWriter, r *http.Request
 // Change the signature if the snippetCreate handler so it is defined as a
 // method against *application.
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
+	// Call the r.ParseForm() method to add any data in POST request bodies to the
+	// r.PostForm map (also works in the same way for PUT and PATCH requests). If
+	// there are any errors, we use our app.ClientError() helper to send a 400 Bad
+	// Request response to the user.
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+	}
+
+	// Use the r.PostForm.Get() method to retrieve the title and content from
+	// the r.PostForm map.
+	title := r.PostForm.Get("title")
+	content := r.PostForm.Get("content")
+
+	// The r.PostForm.Get() method always returns the form dat as a *string*.
+	// However, we're expecting our expires value to be a number, and want to
+	// represent it in our Go code as an iteger. So we need to manually covert
+	// the form data to an integer using strcov.Atoi(), and we send a 400 BAD
+	// REQUEST response if the conversion fails.
+	expireVal, err := strconv.Atoi(r.PostForm.Get("expires value"))
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
 	// Checking if the request method is a POST is now superfluous, because
 	// this is done by httprouter automatically.
 
 	// Create a few vars holding dummy data. We'll remove these later on
 	// during the build.
-	title := "0 snails"
-	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	expireVal := 7
+	// title := "0 snails"
+	// content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
+	// expireVal := 7
 
 	// Pass the data to the SnippetModel.Insert() method, receive the ID of
 	// the new record back.
