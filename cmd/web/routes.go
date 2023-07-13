@@ -28,7 +28,6 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("/snippet/view", app.snippetView)
 	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
-	return app.recoverPanic(app.logRequest(secureHeader(mux)))
 	// Create a middleware chain containing our 'standard' middleware (app.recoverPanic,
 	// app.logRequest, secureHeader) which will be used for every request received.
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeader)
