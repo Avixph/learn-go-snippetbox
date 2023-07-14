@@ -2,25 +2,66 @@
 <form action="/snippet/create" method="post">
   <div>
     <label>Title:</label>
-    <input type="text" name="title" placeholder="title" />
+    <!-- Use the 'with' action to render the value of .Form.FieldErrors.title if it is not empty. -->
+    {{with .Form.FieldErrors.title}}
+    <label class="error">{{.}}</label>
+    {{end}}
+    <!-- Re-populate the title data by setting the 'value' attribute. -->
+    <input
+      type="text"
+      name="title"
+      value="{{.Form.Title}}"
+      placeholder="title"
+    />
   </div>
   <div>
     <label>Content:</label>
-    <textarea name="content" title="content"></textarea>
+    <!-- Render the value of .Form.FieldErrors.content if it is not empty -->
+    {{with .Form.FieldErrors.content}}
+    <label class="error">{{.}}</label>
+    {{end}}
+    <!-- Re-populate the content data by setting the 'value' attribute. -->
+    <textarea name="content" title="content">{{.Form.Content}}</textarea>
   </div>
   <div>
     <label>Delete in:</label>
+    <!-- Render the value of .Form.FieldErrors.expires if it's not empty. -->
+    {{with .Form.FieldErrors.expires}}
+    <label class="error">{{.}}</label>
+    {{end}}
+    <!-- Use the 'if' action to check if the value of the re-populated expires field equals 1, 7, or 365. If it does, then we render the 'checked' attribute so that the radio input is re-selected.  -->
     <input
       type="radio"
-      name="expires value"
+      name="expires"
       value="365"
       title="One Year"
-      checked
+      {{if
+      (eq
+      .Form.Expires
+      365)}}checked{{end}}
     />
     <label>One Year</label>
-    <input type="radio" name="expires value" value="7" title="One Week" />
+    <input
+      type="radio"
+      name="expires"
+      value="7"
+      title="One Week"
+      {{if
+      (eq
+      .Form.Expires
+      7)}}checked{{end}}
+    />
     <label>One Week</label>
-    <input type="radio" name="expires value" value="1" title="One Day" />
+    <input
+      type="radio"
+      name="expires"
+      value="1"
+      title="One Day"
+      {{if
+      (eq
+      .Form.Expires
+      1)}}checked{{end}}
+    />
     <label>One Day</label>
   </div>
   <div>

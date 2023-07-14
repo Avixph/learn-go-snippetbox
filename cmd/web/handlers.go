@@ -4,12 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
-	"unicode/utf8"
 
 	"net/http"
 
 	"github.com/Avixph/learn-go-snippetbox/internal/models"
+	"github.com/Avixph/learn-go-snippetbox/internal/validator"
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
@@ -31,11 +30,11 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Call the newTemplateData() helper to get a templateData struct containg
 	// the 'default' data (which for now is just the current year), and add
 	// the snippet slice to it.
-	TemplData := app.newTemplateData(r)
-	TemplData.Snippets = snippets
+	templData := app.newTemplateData(r)
+	templData.Snippets = snippets
 
 	// Use the new render helper.
-	app.render(w, http.StatusOK, "home.html", TemplData)
+	app.render(w, http.StatusOK, "home.html", templData)
 }
 
 // Define a snippetView handler func
@@ -72,18 +71,41 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// Call the newTemplateData() helper to get a templateData struct containg
 	// the 'default' data (which for now is just the current year), and add
 	// the snippet slice to it.
-	TemplData := app.newTemplateData(r)
-	TemplData.Snippet = snippet
+	templData := app.newTemplateData(r)
+	templData.Snippet = snippet
 
 	// Use the new render helper.
-	app.render(w, http.StatusOK, "view.html", TemplData)
+	app.render(w, http.StatusOK, "view.html", templData)
 }
 
 // Define snippetCreateForm handler func, which for now returns a placeholder.
 func (app *application) snippetCreateForm(w http.ResponseWriter, r *http.Request) {
-	TemplData := app.newTemplateData(r)
+	templData := app.newTemplateData(r)
 
-	app.render(w, http.StatusOK, "create.html", TemplData)
+	// Initialize a new createSnippetForm instance and pass it to the template.
+	// Notice how this is also a great opportunity to set any default or
+	// 'initial' values for the form --- here we set the initial value for the
+	// snippet expiry to 365 days.
+	templData.Form = snippetForm{
+		Expires: 365,
+	}
+
+	app.render(w, http.StatusOK, "create.html", templData)
+}
+
+// Define a snippetForm struct to represent the form data and validation errors
+// for the form fields. Note: all the struct fields are deliberately exported
+// (i.e. start with a capital letter). This is because struct fields must be
+// exported in order to be read by the html/template package when rendering
+// the template.
+// Embed the Validator type which will allow the snippetForm to "inherit"
+// all the fields and methods of our validator type (including the
+// FieldErrors field).
+type snippetForm struct {
+	Title       string
+	Content     string
+	Expires     int
+	FieldErrors validator.Validator
 }
 
 // Define snippetCreate handler func
@@ -97,65 +119,46 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
+		return
 	}
-
-	// Use the r.PostForm.Get() method to retrieve the title and content from
-	// the r.PostForm map.
-	title := r.PostForm.Get("title")
-	content := r.PostForm.Get("content")
 
 	// The r.PostForm.Get() method always returns the form dat as a *string*.
 	// However, we're expecting our expires value to be a number, and want to
 	// represent it in our Go code as an iteger. So we need to manually covert
 	// the form data to an integer using strcov.Atoi(), and we send a 400 BAD
 	// REQUEST response if the conversion fails.
-	expireVal, err := strconv.Atoi(r.PostForm.Get("expires value"))
+	expireVal, err := strconv.Atoi(r.PostForm.Get("expires"))
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	// Initialize a map to hold any validation err for the form fields.
-	fieldErrors := make(map[string]string)
-
-	// Check that the title value is not blank and is not more than 100
-	// characters long. If it fails either check, add a message to the errs map
-	// using the field name as the key.
-	if strings.TrimSpace(title) == "" {
-		fieldErrors["title"] = "This field cannot be blank!"
-	} else if utf8.RuneCountInString(title) > 100 {
-		fieldErrors["title"] = "This field cannot be more than 100 characters long!"
+	// Create an instance of the snippetForm struct containing the values from
+	// the form and an empty map for any validation errors.
+	form := snippetForm{
+		Title:   r.PostForm.Get("title"),
+		Content: r.PostForm.Get("content"),
+		Expires: expireVal,
 	}
 
-	// Check that content value isn't blank.
-	if strings.TrimSpace(content) == "" {
-		fieldErrors["content"] = "This field cannot be blank!"
+	// Since the validator type is embedded by the snippetForm struct, we can call CheckField() directly on iy to execute our validation checks. CheckField() will add the provided key and error message to the FieldErrors map if the check does not evaluate to true.
+	form.FieldErrors.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank!")
+	form.FieldErrors.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long!")
+	form.FieldErrors.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank!")
+	form.FieldErrors.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365!")
+
+	// Use the Valid() method to see if any of the check failed. If they did,
+	// then re-render the template passing in the form in the same way as before.
+	if !form.FieldErrors.Valid() {
+		templData := app.newTemplateData(r)
+		templData.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "create.html", templData)
+		return
 	}
-
-	// Check that the expires value matches one of the permitted values (1, 7,
-	// 365).
-	if expireVal != 1 && expireVal != 7 && expireVal != 365 {
-		fieldErrors["expires value"] = "This field must equal 1, 7 or 365!"
-	}
-
-	// If there are any errors, dump them in a plain text HTTP response and
-	// return from the handler.
-	if len(fieldErrors) > 0 {
-		fmt.Fprint(w, fieldErrors)
-	}
-
-	// Checking if the request method is a POST is now superfluous, because
-	// this is done by httprouter automatically.
-
-	// Create a few vars holding dummy data. We'll remove these later on
-	// during the build.
-	// title := "0 snails"
-	// content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	// expireVal := 7
 
 	// Pass the data to the SnippetModel.Insert() method, receive the ID of
 	// the new record back.
-	id, err := app.snippets.Insert(title, content, expireVal)
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
 	if err != nil {
 		app.serverError(w, err)
 		return
