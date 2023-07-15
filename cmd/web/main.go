@@ -10,6 +10,7 @@ import (
 
 	// Import the models package that we created.
 	"github.com/Avixph/learn-go-snippetbox/internal/models"
+	"github.com/go-playground/form/v4"
 	_ "github.com/lib/pq"
 )
 
@@ -17,12 +18,14 @@ import (
 // web app. For now we'll only include feilds for the two custom loggers.
 // Add a snippets field to the application struct. This will allow us to make
 // the SnippetModel object available to our handlers.
-// Addd aq templateCache feild to the application struct.
+// Addd a templateCache feild to the application struct.
+// Add a formDecoder field to hold
 type application struct {
 	errorLog      *log.Logger
 	infoLog       *log.Logger
 	snippets      *models.SnippetModel
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func main() {
@@ -71,16 +74,21 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	// Initialize a decoder instance.
+	formDecoder := form.NewDecoder()
+
 	// Initialize a new instance of our application struct, containing the
 	// dependencies.
 	// Initialize a models.SnippetModel instance and add it to the application
 	// dependencies.
 	// Add templateCache to the application dependencies.
+	// Add formDecoder to the application dependencies.
 	app := &application{
 		errorLog:      errorLog,
 		infoLog:       infoLog,
 		snippets:      &models.SnippetModel{DB: db},
 		templateCache: templateCache,
+		formDecoder:   formDecoder,
 	}
 
 	// Initalize a new http.Server struct. We set the Addr and Handler

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/go-playground/form/v4"
 	"github.com/joho/godotenv"
 )
 
@@ -89,4 +91,34 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
 		CurrentYear: time.Now().Year(),
 	}
+}
+
+// Create a decodePostForm() helper method. THe second parameter here, dst, is
+// the target destination that we want to decode the form data into.
+func (app *application) decodePostForm(r *http.Request, dst any) error {
+	// Call ParseForm() on the request, in the same way that we did in our
+	// createSnippet handler.
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
+
+	// Call Decode() on our decoder instance, passing the target destination as
+	// the first parameter.
+	err = app.formDecoder.Decode(dst, r.PostForm)
+	if err != nil {
+		// If we try yo use an invalid target destination, the Decode() method
+		// will return an error with the type *form.InvalidDecoderError. We use
+		// errors.As() to check for this and raise a panic rather than returning
+		// the err.
+		var invalidDecoderError *form.InvalidDecoderError
+
+		if errors.As(err, &invalidDecoderError) {
+			panic(err)
+		}
+
+		// For all other errs, we return tham as normal
+		return err
+	}
+	return nil
 }

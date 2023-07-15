@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"strconv"
 
 	"net/http"
 
@@ -101,22 +100,30 @@ func (app *application) snippetCreateForm(w http.ResponseWriter, r *http.Request
 // Embed the Validator type which will allow the snippetForm to "inherit"
 // all the fields and methods of our validator type (including the
 // FieldErrors field).
+// Add struct tags that tell the decoder how to map HTML form values into
+// different struct fields. (i.e. Bellow we're telling the decoder to store
+// the value from the HTML form inputs with the name "title" in the Title
+// field. The struct tag `form:"-"` tells the decoder to completely ignore a
+// field during decoding.)
 type snippetForm struct {
-	Title       string
-	Content     string
-	Expires     int
-	FieldErrors validator.Validator
+	Title               string `form:"title"`
+	Content             string `form:"content"`
+	Expires             int    `form:"expires"`
+	validator.Validator `form:"-"`
 }
 
 // Define snippetCreate handler func
 // Change the signature if the snippetCreate handler so it is defined as a
 // method against *application.
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	// Call the r.ParseForm() method to add any data in POST request bodies to the
-	// r.PostForm map (also works in the same way for PUT and PATCH requests). If
-	// there are any errors, we use our app.ClientError() helper to send a 400 Bad
-	// Request response to the user.
-	err := r.ParseForm()
+	// Declare a new empty instance of the snippetForm struct.
+	var form snippetForm
+
+	// Call the decodePostForm() helper, passing in the current request and
+	// *a pointer* to our snippetForm struct. This will essentially fill our
+	// struct with the relevant values from the HTML form.If there is a problem,
+	// we return a 400 Bed Request response to the client.
+	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
@@ -127,29 +134,29 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	// represent it in our Go code as an iteger. So we need to manually covert
 	// the form data to an integer using strcov.Atoi(), and we send a 400 BAD
 	// REQUEST response if the conversion fails.
-	expireVal, err := strconv.Atoi(r.PostForm.Get("expires"))
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
+	// expireVal, err := strconv.Atoi(r.PostForm.Get("expires"))
+	// if err != nil {
+	// 	app.clientError(w, http.StatusBadRequest)
+	// 	return
+	// }
 
 	// Create an instance of the snippetForm struct containing the values from
 	// the form and an empty map for any validation errors.
-	form := snippetForm{
-		Title:   r.PostForm.Get("title"),
-		Content: r.PostForm.Get("content"),
-		Expires: expireVal,
-	}
+	// form := snippetForm{
+	// 	Title:   r.PostForm.Get("title"),
+	// 	Content: r.PostForm.Get("content"),
+	// 	Expires: expireVal,
+	// }
 
 	// Since the validator type is embedded by the snippetForm struct, we can call CheckField() directly on iy to execute our validation checks. CheckField() will add the provided key and error message to the FieldErrors map if the check does not evaluate to true.
-	form.FieldErrors.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank!")
-	form.FieldErrors.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long!")
-	form.FieldErrors.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank!")
-	form.FieldErrors.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365!")
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank!")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long!")
+	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank!")
+	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365!")
 
 	// Use the Valid() method to see if any of the check failed. If they did,
 	// then re-render the template passing in the form in the same way as before.
-	if !form.FieldErrors.Valid() {
+	if !form.Valid() {
 		templData := app.newTemplateData(r)
 		templData.Form = form
 		app.render(w, http.StatusUnprocessableEntity, "create.html", templData)
