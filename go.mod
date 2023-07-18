@@ -10,3 +10,8 @@ require (
 	github.com/justinas/alice v1.2.0
 	github.com/lib/pq v1.10.9
 )
+
+require (
+	github.com/alexedwards/scs/postgresstore v0.0.0-20230327161757-10d4299e3b24 // indirect
+	github.com/alexedwards/scs/v2 v2.5.1 // indirect
+)
