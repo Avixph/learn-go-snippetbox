@@ -67,11 +67,20 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Use the PopString() method to retrieve the value for the "flash" key. The
+	// method also deletes the key and value from the session data, so that it
+	// acts like a one-time fetch. If there is no matching key in the session
+	// data this will return the empty string.
+	// flash := app.sessionManager.PopString(r.Context(), "flash")
+
 	// Call the newTemplateData() helper to get a templateData struct containg
 	// the 'default' data (which for now is just the current year), and add
 	// the snippet slice to it.
 	templData := app.newTemplateData(r)
 	templData.Snippet = snippet
+
+	// Pass the flash message to the template.
+	// templData.Flash = flash
 
 	// Use the new render helper.
 	app.render(w, http.StatusOK, "view.html", templData)
@@ -170,6 +179,9 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
+
+	// Use the put() method to add a string value ("Snippet successfully created!") and the corresponding key ("flash") to the session data.
+	app.sessionManager.Put(r.Context(), "flash", "Snippet successfully created!")
 
 	// w.Write([]byte("Create a new snippet..."))
 	// Rediect the user to the relevant page for the snippet.
