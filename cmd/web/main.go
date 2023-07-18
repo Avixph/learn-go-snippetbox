@@ -85,9 +85,14 @@ func main() {
 	// it touse oour PostgeSQL database as the session store, and set a lifetime
 	// of 12 hours (so that sessions automatically expire after 12 hours of
 	// creation.)
+	// Make sure that the Secure attribute is set on our session coockies.
+	// Setting ths means that the cookie will only be sent by a user's web
+	// browser when HTTPS connection is being used (and wo't be sent over
+	// unsecure HTTP connections).
 	sessionManager := scs.New()
 	sessionManager.Store = postgresstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
+	sessionManager.Cookie.Secure = true
 
 	// Initialize a new instance of our application struct, containing the
 	// dependencies.
@@ -120,16 +125,17 @@ func main() {
 	// pointer (i.e. prefix it with the * symbol) before using it. Note that
 	// we're using the infoLog.Printf() func to interpolate the address with
 	// the log message.
-	// Use the http.ListenAndServe() func on the http.Server() struct to
-	// start a new web server. We pass in two parameters: the TCP network
+	// Use the http.ListenAndServeTLS() func on the http.Server() struct to
+	// start a new web server (passing in the paths to the TLS certificate and
+	//corresponding private key). We pass in two parameters: the TCP network
 	// address to listen on (ex:(localhost::4000)) and the servermux we
 	// created. If http. listenAndServe() returns an err we use the errorLog.
 	// Fatal() func to log the err message and exit. Note that any err
 	// returned by http. listenAndServe() is always non-nill.
 	// Because the err var is already declared above, we need to use the
 	// assignment operator "=" here, instead of ":=" 'declare and assigng'
-	infoLog.Printf("Starting server on http://localhost%s", *addr)
-	err = srv.ListenAndServe()
+	infoLog.Printf("Starting server on https://localhost%s", *addr)
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLog.Fatal(err)
 }
 
