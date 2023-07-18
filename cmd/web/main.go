@@ -7,9 +7,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	// Import the models package that we created.
 	"github.com/Avixph/learn-go-snippetbox/internal/models"
+	"github.com/alexedwards/scs/postgresstore"
+	"github.com/alexedwards/scs/v2"
+	"github.com/go-playground/form/v4"
 	_ "github.com/lib/pq"
 )
 
@@ -17,12 +21,15 @@ import (
 // web app. For now we'll only include feilds for the two custom loggers.
 // Add a snippets field to the application struct. This will allow us to make
 // the SnippetModel object available to our handlers.
-// Addd aq templateCache feild to the application struct.
+// Addd a templateCache feild, formDecoder field, and a sessionManager field
+// to the application struct.
 type application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	snippets      *models.SnippetModel
-	templateCache map[string]*template.Template
+	errorLog       *log.Logger
+	infoLog        *log.Logger
+	snippets       *models.SnippetModel
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -71,16 +78,30 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	// Initialize a decoder instance.
+	formDecoder := form.NewDecoder()
+
+	// Initialize a new session manager with scs.New() funct. Then we configure
+	// it touse oour PostgeSQL database as the session store, and set a lifetime
+	// of 12 hours (so that sessions automatically expire after 12 hours of
+	// creation.)
+	sessionManager := scs.New()
+	sessionManager.Store = postgresstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	// Initialize a new instance of our application struct, containing the
 	// dependencies.
 	// Initialize a models.SnippetModel instance and add it to the application
 	// dependencies.
-	// Add templateCache to the application dependencies.
+	// Add a templateCache, a formDecoder, and a sessionManager to the
+	// application dependencies.
 	app := &application{
-		errorLog:      errorLog,
-		infoLog:       infoLog,
-		snippets:      &models.SnippetModel{DB: db},
-		templateCache: templateCache,
+		errorLog:       errorLog,
+		infoLog:        infoLog,
+		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
 	}
 
 	// Initalize a new http.Server struct. We set the Addr and Handler
