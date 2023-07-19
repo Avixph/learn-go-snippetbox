@@ -124,11 +124,15 @@ func main() {
 	// Call the new app.routes() method to get the servermux containing our
 	// routes.
 	// Set the server's TLSConfig field to use the tlsConfig variable.
+	// Add Idle, Read Write timeouts to the server.
 	srv := &http.Server{
-		Addr:      *addr,
-		ErrorLog:  errorLog,
-		Handler:   app.routes(),
-		TLSConfig: tlsConfig,
+		Addr:         *addr,
+		ErrorLog:     errorLog,
+		Handler:      app.routes(),
+		TLSConfig:    tlsConfig,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	// The value returned from the flag.Sring() func is a pointer to the
