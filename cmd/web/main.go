@@ -19,14 +19,15 @@ import (
 
 // Define an application struct to hold the app-wide dependencies for the
 // web app. For now we'll only include feilds for the two custom loggers.
-// Add a snippets field to the application struct. This will allow us to make
-// the SnippetModel object available to our handlers.
-// Addd a templateCache feild, formDecoder field, and a sessionManager field
-// to the application struct.
+// Add a snippets field to the application struct. This will allow us to
+// make the SnippetModel object available to our handlers.
+// Addd a templateCache feild, formDecoder field, a sessionManager field,
+// and a users field to the application struct.
 type application struct {
 	errorLog       *log.Logger
 	infoLog        *log.Logger
 	snippets       *models.SnippetModel
+	users          *models.UserModel
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
@@ -96,14 +97,15 @@ func main() {
 
 	// Initialize a new instance of our application struct, containing the
 	// dependencies.
-	// Initialize a models.SnippetModel instance and add it to the application
-	// dependencies.
-	// Add a templateCache, a formDecoder, and a sessionManager to the
+	// Initialize a models.SnippetModel instance and add it to the
 	// application dependencies.
+	// Add a templateCache, a formDecoder, a sessionManager, and models.
+	// UserModel to the application dependencies.
 	app := &application{
 		errorLog:       errorLog,
 		infoLog:        infoLog,
 		snippets:       &models.SnippetModel{DB: db},
+		users:          &models.UserModel{DB: db},
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
@@ -169,28 +171,14 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
-// CREATE TABLE  snippets (
-//     id uuid DEFAULT uuid_generate_v4() NOT NULL,                             
-//     title VARCHAR(120) NOT NULL,
-//     content TEXT NOT NULL,
+// CREATE TABLE  users (
+//     id uuid DEFAULT uuid_generate_v4() NOT NULL,
+//     name VARCHAR(255) NOT NULL,
+//     email VARCHAR(255) NOT NULL,
+//     hashed_password CHAR(60) NOT NULL,
 //     created_on TIMESTAMP NOT NULL,
-//     updated_on TIMESTAMP NOT NULL,
-//     expires_on TIMESTAMP NOT NULL,
 //     PRIMARY KEY (id)
 // );
-
-// CREATE OR REPLACE FUNCTION update_timestamp()
-// RETURNS TRIGGER LANGUAGE plpgsql AS $$
-// BEGIN
-//     NEW.updated_on = now();
-//     RETURN NEW;
-// END;
-// $$;
-
-// CREATE TRIGGER set_timestamp
-//   BEFORE UPDATE ON snippets
-//   FOR EACH ROW
-//   EXECUTE PROCEDURE update_timestamp();
 
 // INSERT INTO snippets (title, content, created_on, updated_on, expires_on) VALUES (
 //     'First autumn morning',
@@ -199,4 +187,3 @@ func openDB(dsn string) (*sql.DB, error) {
 //     (now() at time zone 'utc'),
 //                 (now() at time zone 'utc' + interval '7 day')
 // );
-
