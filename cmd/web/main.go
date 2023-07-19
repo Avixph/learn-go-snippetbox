@@ -168,3 +168,35 @@ func openDB(dsn string) (*sql.DB, error) {
 	}
 	return db, nil
 }
+
+// CREATE TABLE  snippets (
+//     id uuid DEFAULT uuid_generate_v4() NOT NULL,                             
+//     title VARCHAR(120) NOT NULL,
+//     content TEXT NOT NULL,
+//     created_on TIMESTAMP NOT NULL,
+//     updated_on TIMESTAMP NOT NULL,
+//     expires_on TIMESTAMP NOT NULL,
+//     PRIMARY KEY (id)
+// );
+
+// CREATE OR REPLACE FUNCTION update_timestamp()
+// RETURNS TRIGGER LANGUAGE plpgsql AS $$
+// BEGIN
+//     NEW.updated_on = now();
+//     RETURN NEW;
+// END;
+// $$;
+
+// CREATE TRIGGER set_timestamp
+//   BEFORE UPDATE ON snippets
+//   FOR EACH ROW
+//   EXECUTE PROCEDURE update_timestamp();
+
+// INSERT INTO snippets (title, content, created_on, updated_on, expires_on) VALUES (
+//     'First autumn morning',
+//     'First autumn morning\nthe mirror I stare into\nshows my father''s face.\n\n– Murakami Kijo',
+//     (now() at time zone 'utc'),
+//     (now() at time zone 'utc'),
+//                 (now() at time zone 'utc' + interval '7 day')
+// );
+

@@ -188,3 +188,23 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	// Update the redirect path to use the new clean URL format.
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%v", id), http.StatusSeeOther)
 }
+
+func (app *application) userSignupForm(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Display an HTML form for sining up a new user...")
+}
+
+func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Create a new user...")
+}
+
+func (app *application) userLoginForm(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Display an HTML form for logging in a user...")
+}
+
+func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Authenticate and login a user...")
+}
+
+func (app *application) userLogout(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Logout a user...")
+}
