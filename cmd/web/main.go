@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"html/template"
@@ -9,7 +10,6 @@ import (
 	"os"
 	"time"
 
-	// Import the models package that we created.
 	"github.com/Avixph/learn-go-snippetbox/internal/models"
 	"github.com/alexedwards/scs/postgresstore"
 	"github.com/alexedwards/scs/v2"
@@ -109,15 +109,26 @@ func main() {
 		sessionManager: sessionManager,
 	}
 
+	// Initialize a tls.Config struct to hold the non-default TLS settings we
+	// want the server to use. In this case the only thing that we're changing
+	// is the curve prefernece value, so that the only elliptic curves with
+	// assembly implementations are used.
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
 	// Initalize a new http.Server struct. We set the Addr and Handler
 	// fields so that the server uses the same network address and routes as
 	// before, and set the ErrorLog fielfd so that ther server now uses the
 	// custom errorLog logger in the event of and problems.
+	// Call the new app.routes() method to get the servermux containing our
+	// routes.
+	// Set the server's TLSConfig field to use the tlsConfig variable.
 	srv := &http.Server{
-		Addr:     *addr,
-		ErrorLog: errorLog,
-		// Call the new app.routes() method to get the servermux containing our routes.
-		Handler: app.routes(),
+		Addr:      *addr,
+		ErrorLog:  errorLog,
+		Handler:   app.routes(),
+		TLSConfig: tlsConfig,
 	}
 
 	// The value returned from the flag.Sring() func is a pointer to the
