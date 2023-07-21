@@ -210,12 +210,12 @@ button {
     background: none;
     padding: 0;
     border: none;
-    color: #62CB31;
+    color: #4b8df7;
     text-decoration: none;
 }
 
 button:hover {
-    color: #4EB722;
+    color: #477eeb;
     text-decoration: underline;
     cursor: pointer;
 }

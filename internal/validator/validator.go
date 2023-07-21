@@ -1,11 +1,22 @@
 package validator
 
 import (
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
 
-// Define a new validator type which contains a map of 
+// expression pattern for  checking the format of an email
+// address. This returns a pointer to a 'compiled' regexp.
+// Regexp type, or panic if there's an error. Parsing this
+// pattern once at startup and storing the compiled *regexp.
+//
+//	in a variable is more performant than re-parsin the
+//
+// pattern each time we need it.
+var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+
+// Define a new validator type which contains a map of
 // validation errors for our form fields.
 type Validator struct {
 	FieldErrors map[string]string
@@ -52,8 +63,7 @@ func MaxChars(value string, n int) bool {
 	return utf8.RuneCountInString(value) <= n
 }
 
-// The PermittedInt() func returns true only if the value is 
-// in a list of permitted integers.
+// The PermittedInt() func returns true only if the value is in a list of permitted integers.
 func PermittedInt(value int, permittedValues ...int) bool {
 	for i := range permittedValues {
 		if value == permittedValues[i] {
@@ -61,4 +71,17 @@ func PermittedInt(value int, permittedValues ...int) bool {
 		}
 	}
 	return false
+}
+
+// The MinChars() func returns true if a
+// value contains at least n characters.
+func MinChars(value string, n int) bool {
+	return utf8.RuneCountInString(value) >= n
+}
+
+// The Matches() func returns true if a value
+// matches a provided compiled regular
+// expression pattern.
+func Matches(value string, rx *regexp.Regexp) bool {
+	return rx.MatchString(value)
 }
