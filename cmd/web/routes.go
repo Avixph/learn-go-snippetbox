@@ -33,7 +33,8 @@ func (app *application) routes() http.Handler {
 
 	// Create a middleware chain containing the middleware specific to our
 	// unprotected application routes using the "dynamic" middleware chain.
-	dynamic := alice.New(app.sessionManager.LoadAndSave)
+	// Use the noSurf middleware on all our 'dynamic' routes.
+	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
 
 	// Register the home, snippetView and snippetCreate funcs as handlers for the
 	// corrisponding URL patrerns with the serverrouter. Swap the route

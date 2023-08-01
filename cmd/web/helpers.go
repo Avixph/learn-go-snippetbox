@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-playground/form/v4"
 	"github.com/joho/godotenv"
+	"github.com/justinas/nosurf"
 )
 
 // The serverError helper writes an error message and stack trace to the
@@ -87,13 +88,14 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 // Create a newTemplateData() helper, which returns a pointer to a
 // templateData struct initialized with the current year. Note: we're not
 // using the *http.Request parameter here at the moment, but we will later.
-// Add the flash message and authentication status to the template data, if
-// one exists.
+// Add the flash message the authentication status, and CSRF token to the
+// template data, if one exists.
 func (app *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
 		CurrentYear:     time.Now().Year(),
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
+		CSRFToken:       nosurf.Token(r),
 	}
 }
 

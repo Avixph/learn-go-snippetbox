@@ -14,5 +14,6 @@ require (
 require (
 	github.com/alexedwards/scs/postgresstore v0.0.0-20230327161757-10d4299e3b24 // indirect
 	github.com/alexedwards/scs/v2 v2.5.1 // indirect
+	github.com/justinas/nosurf v1.1.1 // indirect
 	golang.org/x/crypto v0.11.0 // indirect
 )
