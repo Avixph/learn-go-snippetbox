@@ -12,11 +12,11 @@ import (
 // how the feilds of the struct correspond to the feilds in our PostgreSQL
 // snippets table?
 type Snippet struct {
-	ID         uuid.UUID
-	Title      string
-	Content    string
-	Created_On time.Time
-	Expires_On time.Time
+	ID        uuid.UUID
+	Title     string
+	Content   string
+	CreatedOn time.Time
+	ExpiresOn time.Time
 }
 
 // Define a SnippetModel type that wraps a sql.DB connection pool.
@@ -75,7 +75,7 @@ func (m *SnippetModel) Get(id uuid.UUID) (*Snippet, error) {
 	// to row.Scan() are *pointers* to the place we want to copy the data
 	// into, and the number of arguments must be exactly the same as the
 	// number of columns returned by the statement.
-	err := row.Scan(&s.ID, &s.Title, &s.Content, &s.Created_On, &s.Expires_On)
+	err := row.Scan(&s.ID, &s.Title, &s.Content, &s.CreatedOn, &s.ExpiresOn)
 	if err != nil {
 		// If the query returns no rows, the row.Scan() will return a
 		// sql.ErrNoRows err. We use the errors.Is() func to check for that
@@ -127,7 +127,7 @@ func (m *SnippetModel) Latest() ([]*Snippet, error) {
 		// () must be pointers to the place we want to copy the data into, and
 		// the number of arguments must be exactly the same as the number of
 		// columns returned by the statement.
-		err := rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created_On, &s.Expires_On)
+		err := rows.Scan(&s.ID, &s.Title, &s.Content, &s.CreatedOn, &s.ExpiresOn)
 		if err != nil {
 			return nil, err
 		}

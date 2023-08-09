@@ -31,10 +31,10 @@ func (app *application) routes() http.Handler {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
 
-	// Create a new middleware chain containing the middleware pecific to our
-	// dynamic application routes.For now, this chain will only contain the
-	// LoadAndSave session middleware.
-	dynamic := alice.New(app.sessionManager.LoadAndSave)
+	// Create a middleware chain containing the middleware specific to our
+	// unprotected application routes using the "dynamic" middleware chain.
+	// Use the noSurf middleware on all our 'dynamic' routes.
+	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
 
 	// Register the home, snippetView and snippetCreate funcs as handlers for the
 	// corrisponding URL patrerns with the serverrouter. Swap the route
@@ -45,8 +45,19 @@ func (app *application) routes() http.Handler {
 	// to registering the route using the router.Hanler() method.
 	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
 	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))
-	router.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.snippetCreateForm))
-	router.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.snippetCreate))
+	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignupForm))
+	router.Handler(http.MethodPost, "/user/signup", dynamic.ThenFunc(app.userSignup))
+	router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLoginForm))
+	router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLogin))
+
+	// Create a protected (authenticated) middleware chain containing the
+	// middleware specific to our "protected" middleware chain which includes the
+	// requireAuthentication middleware.
+	protected := dynamic.Append(app.requireAuthentication)
+
+	router.Handler(http.MethodGet, "/snippet/create", protected.ThenFunc(app.snippetCreateForm))
+	router.Handler(http.MethodPost, "/snippet/create", protected.ThenFunc(app.snippetCreate))
+	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogout))
 
 	// Create a middleware chain containing our 'standard' middleware (app.recoverPanic,
 	// app.logRequest, secureHeader) which will be used for every request received.

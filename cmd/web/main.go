@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"html/template"
@@ -9,7 +10,6 @@ import (
 	"os"
 	"time"
 
-	// Import the models package that we created.
 	"github.com/Avixph/learn-go-snippetbox/internal/models"
 	"github.com/alexedwards/scs/postgresstore"
 	"github.com/alexedwards/scs/v2"
@@ -19,14 +19,15 @@ import (
 
 // Define an application struct to hold the app-wide dependencies for the
 // web app. For now we'll only include feilds for the two custom loggers.
-// Add a snippets field to the application struct. This will allow us to make
-// the SnippetModel object available to our handlers.
-// Addd a templateCache feild, formDecoder field, and a sessionManager field
-// to the application struct.
+// Add a snippets field to the application struct. This will allow us to
+// make the SnippetModel object available to our handlers.
+// Addd a templateCache feild, formDecoder field, a sessionManager field,
+// and a users field to the application struct.
 type application struct {
 	errorLog       *log.Logger
 	infoLog        *log.Logger
 	snippets       *models.SnippetModel
+	users          *models.UserModel
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
@@ -85,34 +86,55 @@ func main() {
 	// it touse oour PostgeSQL database as the session store, and set a lifetime
 	// of 12 hours (so that sessions automatically expire after 12 hours of
 	// creation.)
+	// Make sure that the Secure attribute is set on our session coockies.
+	// Setting ths means that the cookie will only be sent by a user's web
+	// browser when HTTPS connection is being used (and wo't be sent over
+	// unsecure HTTP connections).
 	sessionManager := scs.New()
 	sessionManager.Store = postgresstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
+	sessionManager.Cookie.Secure = true
 
 	// Initialize a new instance of our application struct, containing the
 	// dependencies.
-	// Initialize a models.SnippetModel instance and add it to the application
-	// dependencies.
-	// Add a templateCache, a formDecoder, and a sessionManager to the
+	// Initialize a models.SnippetModel instance and add it to the
 	// application dependencies.
+	// Add a templateCache, a formDecoder, a sessionManager, and models.
+	// UserModel to the application dependencies.
 	app := &application{
 		errorLog:       errorLog,
 		infoLog:        infoLog,
 		snippets:       &models.SnippetModel{DB: db},
+		users:          &models.UserModel{DB: db},
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
+	}
+
+	// Initialize a tls.Config struct to hold the non-default TLS settings we
+	// want the server to use. In this case the only thing that we're changing
+	// is the curve prefernece value, so that the only elliptic curves with
+	// assembly implementations are used.
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
 	}
 
 	// Initalize a new http.Server struct. We set the Addr and Handler
 	// fields so that the server uses the same network address and routes as
 	// before, and set the ErrorLog fielfd so that ther server now uses the
 	// custom errorLog logger in the event of and problems.
+	// Call the new app.routes() method to get the servermux containing our
+	// routes.
+	// Set the server's TLSConfig field to use the tlsConfig variable.
+	// Add Idle, Read Write timeouts to the server.
 	srv := &http.Server{
-		Addr:     *addr,
-		ErrorLog: errorLog,
-		// Call the new app.routes() method to get the servermux containing our routes.
-		Handler: app.routes(),
+		Addr:         *addr,
+		ErrorLog:     errorLog,
+		Handler:      app.routes(),
+		TLSConfig:    tlsConfig,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	// The value returned from the flag.Sring() func is a pointer to the
@@ -120,16 +142,17 @@ func main() {
 	// pointer (i.e. prefix it with the * symbol) before using it. Note that
 	// we're using the infoLog.Printf() func to interpolate the address with
 	// the log message.
-	// Use the http.ListenAndServe() func on the http.Server() struct to
-	// start a new web server. We pass in two parameters: the TCP network
+	// Use the http.ListenAndServeTLS() func on the http.Server() struct to
+	// start a new web server (passing in the paths to the TLS certificate and
+	//corresponding private key). We pass in two parameters: the TCP network
 	// address to listen on (ex:(localhost::4000)) and the servermux we
 	// created. If http. listenAndServe() returns an err we use the errorLog.
 	// Fatal() func to log the err message and exit. Note that any err
 	// returned by http. listenAndServe() is always non-nill.
 	// Because the err var is already declared above, we need to use the
 	// assignment operator "=" here, instead of ":=" 'declare and assigng'
-	infoLog.Printf("Starting server on http://localhost%s", *addr)
-	err = srv.ListenAndServe()
+	infoLog.Printf("Starting server on https://localhost%s", *addr)
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLog.Fatal(err)
 }
 
@@ -147,3 +170,20 @@ func openDB(dsn string) (*sql.DB, error) {
 	}
 	return db, nil
 }
+
+// CREATE TABLE  users (
+//     id uuid DEFAULT uuid_generate_v4() NOT NULL,
+//     name VARCHAR(255) NOT NULL,
+//     email VARCHAR(255) NOT NULL,
+//     hashed_password CHAR(60) NOT NULL,
+//     created_on TIMESTAMP NOT NULL,
+//     PRIMARY KEY (id)
+// );
+
+// INSERT INTO snippets (title, content, created_on, updated_on, expires_on) VALUES (
+//     'First autumn morning',
+//     'First autumn morning\nthe mirror I stare into\nshows my father''s face.\n\n– Murakami Kijo',
+//     (now() at time zone 'utc'),
+//     (now() at time zone 'utc'),
+//                 (now() at time zone 'utc' + interval '7 day')
+// );

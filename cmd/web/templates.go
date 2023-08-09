@@ -11,14 +11,16 @@ import (
 // Define a templateData type to act as the holding structure for any
 // dynamic data that we want to pass to our HTML templates. At the moment it
 // only contains one feild, but we'll add more to it as the build progresses.
-// Add a Form field with the type "any" and a Flash field to the templateData
-// struct.
+// Add a Form field with the type "any" a Flash field, a IsAuthenticated field,
+// and a CSRFToken field to the templateData struct.
 type templateData struct {
-	CurrentYear int
-	Snippet     *models.Snippet
-	Snippets    []*models.Snippet
-	Form        any
-	Flash       string
+	CurrentYear     int
+	Snippet         *models.Snippet
+	Snippets        []*models.Snippet
+	Form            any
+	Flash           string
+	IsAuthenticated bool
+	CSRFToken       string
 }
 
 // Create a humanDate func that returns a nicely formatted string

@@ -17,7 +17,8 @@
 .AppleDouble
 .LSOverride
 .env
+/tls/
+
 
 # Go workspace file
 go.work
-
