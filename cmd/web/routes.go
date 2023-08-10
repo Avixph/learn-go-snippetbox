@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	"github.com/Avixph/learn-go-snippetbox/ui"
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 )
@@ -20,16 +21,18 @@ func (app *application) routes() http.Handler {
 		app.notFound(w)
 	})
 
-	// Create a file server which serves files out of the "./ui/static"
-	// directory. Note that the path given to the http.Dir func is relative
-	// to the project directory root.
+	// Take the ui.Files embeded filesytem and convert it to a a http.FS type so
+	// that it satisfies the http.FileSystem interface. We then pass that to the
+	// http.FileServer() func to create the file server handler.
 	// Use the router.Handler() func to register the file server as the handler
-	// for all URL paths that start with "/static/". For matching paths, we
-	// strip the "/static/" prefix before the request reaches the file
-	// server.
-	// Update the pattern for the route for the static files.
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+	// for all URL paths that start with "/static/".
+	// Our static files are contained in the "static" folder of the embeded ui.
+	// Files (ex: The CSS stylesheet is located at "/static/css/main.css" which
+	// means that we no longer need to strip the prefix from the request URL. Any \
+	// request that starts with "/static/" can just be passed directly to the
+	// fileserver and corresponding static file will be served.)
+	fileServer := http.FileServer(http.FS(ui.Files))
+	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
 
 	// Create a middleware chain containing the middleware specific to our
 	// unprotected application routes using the "dynamic" middleware chain.
