@@ -64,7 +64,10 @@ func newTemplateCache() (map[string]*template.Template, error) {
 			page,
 		}
 
-		// The template.FuncMap must be registered with the template set before calling the ParseFS() method. This means we have to use template.New() to create an empty template set, use the Funcs() method to register the template.FuncMap, and then parse the tempalte file.
+		// The template.FuncMap must be registered with the template set before calling 
+		// the ParseFS() method. This means we have to use template.New() to create an 
+		// empty template set, use the Funcs() method to register the template.FuncMap, 
+		// and then parse the tempalte file.
 		ts, err := template.New(name).Funcs(templFunctions).ParseFS(ui.Files, patterns...)
 		if err != nil {
 			return nil, err
