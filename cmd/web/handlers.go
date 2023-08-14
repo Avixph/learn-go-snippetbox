@@ -157,11 +157,14 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	// 	Expires: expireVal,
 	// }
 
-	// Since the validator type is embedded by the snippetForm struct, we can call CheckField() directly on iy to execute our validation checks. CheckField() will add the provided key and error message to the FieldErrors map if the check does not evaluate to true.
+	// Since the validator type is embedded by the snippetForm struct, we can call 
+	// CheckField() directly on iy to execute our validation checks. CheckField() will 
+	// add the provided key and error message to the FieldErrors map if the check does 
+	// not evaluate to true.
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank!")
 	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long!")
 	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank!")
-	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365!")
+	form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365!")
 
 	// Use the Valid() method to see if any of the check failed. If they did,
 	// then re-render the template passing in the form in the same way as before.
