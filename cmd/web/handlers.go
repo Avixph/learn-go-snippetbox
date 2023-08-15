@@ -157,9 +157,9 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	// 	Expires: expireVal,
 	// }
 
-	// Since the validator type is embedded by the snippetForm struct, we can call 
-	// CheckField() directly on iy to execute our validation checks. CheckField() will 
-	// add the provided key and error message to the FieldErrors map if the check does 
+	// Since the validator type is embedded by the snippetForm struct, we can call
+	// CheckField() directly on iy to execute our validation checks. CheckField() will
+	// add the provided key and error message to the FieldErrors map if the check does
 	// not evaluate to true.
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank!")
 	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long!")
@@ -353,4 +353,8 @@ func (app *application) userLogout(w http.ResponseWriter, r *http.Request) {
 
 	// Redirect the user to the app homepage.
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func ping(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("OK"))
 }
