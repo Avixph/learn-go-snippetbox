@@ -25,6 +25,14 @@ type UserModel struct {
 	DB *sql.DB
 }
 
+// Define a UserModelInterface interface that describes the methods our
+// UserModel has.
+type UserModelInterface interface {
+	Insert(name, email, password string) error
+	Authenticate(email, password string) (string, error)
+	Exists(id uuid.UUID) (bool, error)
+}
+
 // The Insert() method will add a new recod to the "users" table
 func (m *UserModel) Insert(name, email, password string) error {
 	// Create a bcrypt hash of the plain-text password.

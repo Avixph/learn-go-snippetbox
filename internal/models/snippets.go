@@ -24,6 +24,14 @@ type SnippetModel struct {
 	DB *sql.DB
 }
 
+// Define a SnippetModelInterface interface that describes the methods our
+// SnippetModel has.
+type SnippetModelInterface interface {
+	Insert(title string, content string, expireVal int) (string, error)
+	Get(id uuid.UUID) (*Snippet, error)
+	Latest() ([]*Snippet, error)
+}
+
 // The Insert() method will insert a new snippet into the database.
 func (m *SnippetModel) Insert(title string, content string, expireVal int) (string, error) {
 	// Define the SQL query we want to execute.
