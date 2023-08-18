@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/Avixph/learn-go-snippetbox/internal/assert"
@@ -85,5 +86,164 @@ func TestSnippetView(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestUserSignup(t *testing.T) {
+	// Create the application struct containng the mocked dependencies
+	// and set up the test server for running an end-to-end test.
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	// Make a GET /user/signup request and then extract the CSRF token
+	// from the response body.
+	_, _, body := ts.get(t, "/user/signup")
+	csrfToken := extractCSRFToken(t, body)
+
+	const (
+		validName     = "Nom Falso"
+		validPassword = "pa$$w0rd8923"
+		validEmail    = "falso@example.com"
+		formTag       = `<form action="/user/signup" method="POST" novalidate>`
+	)
+
+	tests := []struct {
+		name         string
+		userName     string
+		userEmail    string
+		userPassword string
+		csrfToken    string
+		wantCode     int
+		wantFormTag  string
+	}{
+		{
+			name:         "Valid submission",
+			userName:     validName,
+			userEmail:    validEmail,
+			userPassword: validPassword,
+			csrfToken:    csrfToken,
+			wantCode:     http.StatusSeeOther,
+		},
+		{
+			name:         "Invalid CSRF Token",
+			userName:     validName,
+			userEmail:    validEmail,
+			userPassword: validPassword,
+			csrfToken:    "wrongToken",
+			wantCode:     http.StatusBadRequest,
+		},
+		{
+			name:         "Empty name",
+			userName:     "",
+			userEmail:    validEmail,
+			userPassword: validPassword,
+			csrfToken:    csrfToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
+		},
+		{
+			name:         "Empty email",
+			userName:     validName,
+			userEmail:    "",
+			userPassword: validPassword,
+			csrfToken:    csrfToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
+		},
+		{
+			name:         "Empty password",
+			userName:     validName,
+			userEmail:    validEmail,
+			userPassword: "",
+			csrfToken:    csrfToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
+		},
+		{
+			name:         "Invalid email",
+			userName:     validName,
+			userEmail:    "nom@example.",
+			userPassword: validPassword,
+			csrfToken:    csrfToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
+		},
+		{
+			name:         "Short password",
+			userName:     validName,
+			userEmail:    validEmail,
+			userPassword: "pa$$",
+			csrfToken:    csrfToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
+		},
+		{
+			name:         "Duplicate email",
+			userName:     validName,
+			userEmail:    "kopi@example.com",
+			userPassword: validPassword,
+			csrfToken:    csrfToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			form := url.Values{}
+			form.Add("name", tt.userName)
+			form.Add("email", tt.userEmail)
+			form.Add("password", tt.userPassword)
+			form.Add("csrf_token", tt.csrfToken)
+
+			code, _, body := ts.postForm(t, "/user/signup", form)
+
+			assert.Equal(t, code, tt.wantCode)
+
+			if tt.wantFormTag != "" {
+				assert.StringContains(t, body, tt.wantFormTag)
+			}
+		})
+	}
+}
+
+func TestSnippetCreate(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	t.Run("Unauthenticated", func(t *testing.T) {
+		code, headers, _ := ts.get(t, "/snippet/create")
+
+		assert.Equal(t, code, http.StatusSeeOther)
+
+		assert.Equal(t, headers.Get("Location"), "/user/login")
+	})
+
+	t.Run("Authenticated", func(t *testing.T) {
+		// Make a GET /user/login request and extract the CSRF token from the
+		// response.
+		_, _, body := ts.get(t, "/user/login")
+		csrfToken := extractCSRFToken(t, body)
+
+		const (
+			validEmail    = "falso@example.com"
+			validPassword = "pa$$w0rd8923"
+			validFormTag  = `<form action="/snippet/create" method="POST">`
+		)
+
+		// Make a POST /user/login request using the extracted CSRF token and
+		// credentials from the mock user model.
+		form := url.Values{}
+		form.Add("email", validEmail)
+		form.Add("password", validPassword)
+		form.Add("csrf_token", csrfToken)
+		ts.postForm(t, "/user/login", form)
+
+		// Check that the authenticated user is shown the create snippet form.
+		code, _, body := ts.get(t, "/snippet/create")
+
+		assert.Equal(t, code, http.StatusOK)
+		assert.Equal(t, body, validFormTag)
+	})
 }

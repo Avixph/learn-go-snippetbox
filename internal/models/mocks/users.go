@@ -18,6 +18,7 @@ func (m *UserModel) Insert(name, email, password string) error {
 
 func (m *UserModel) Authenticate(email, password string) (string, error) {
 	if email == "falso@example.com" && password == "pa$$w0rd8923" {
+		// return uuid.New().String(), nil
 		return "6ba7b811-9dad-11d1-80b4-00c04fd430c8", nil
 	}
 

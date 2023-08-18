@@ -8,6 +8,14 @@ import (
 	"github.com/google/uuid"
 )
 
+// Define a SnippetModelInterface interface that describes the methods our
+// SnippetModel has.
+type SnippetModelInterface interface {
+	Insert(title string, content string, expireVal int) (string, error)
+	Get(id uuid.UUID) (*Snippet, error)
+	Latest() ([]*Snippet, error)
+}
+
 // Define a Snippet type that holds data for individual snippets. Notice
 // how the feilds of the struct correspond to the feilds in our PostgreSQL
 // snippets table?
@@ -22,14 +30,6 @@ type Snippet struct {
 // Define a SnippetModel type that wraps a sql.DB connection pool.
 type SnippetModel struct {
 	DB *sql.DB
-}
-
-// Define a SnippetModelInterface interface that describes the methods our
-// SnippetModel has.
-type SnippetModelInterface interface {
-	Insert(title string, content string, expireVal int) (string, error)
-	Get(id uuid.UUID) (*Snippet, error)
-	Latest() ([]*Snippet, error)
 }
 
 // The Insert() method will insert a new snippet into the database.

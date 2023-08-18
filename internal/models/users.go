@@ -11,6 +11,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Define a UserModelInterface interface that describes the methods our
+// UserModel has.
+type UserModelInterface interface {
+	Insert(name, email, password string) error
+	Authenticate(email, password string) (string, error)
+	Exists(id uuid.UUID) (bool, error)
+}
+
 // Define a User type.
 type User struct {
 	ID             uuid.UUID
@@ -23,14 +31,6 @@ type User struct {
 // Define a UserModel type that wraps a database connection pool.
 type UserModel struct {
 	DB *sql.DB
-}
-
-// Define a UserModelInterface interface that describes the methods our
-// UserModel has.
-type UserModelInterface interface {
-	Insert(name, email, password string) error
-	Authenticate(email, password string) (string, error)
-	Exists(id uuid.UUID) (bool, error)
 }
 
 // The Insert() method will add a new recod to the "users" table
@@ -112,5 +112,12 @@ func (m *UserModel) Authenticate(email, password string) (string, error) {
 // The Exists() method will checkif a user with a specific ID
 // exists.
 func (m *UserModel) Exists(id uuid.UUID) (bool, error) {
-	return false, nil
+	var exists bool
+
+	query := `SELECT EXISTS(SELECT true FROM users WHERE id = $1)`
+
+	row := m.DB.QueryRow(query, id)
+	err := row.Scan(&exists)
+
+	return exists, err
 }
