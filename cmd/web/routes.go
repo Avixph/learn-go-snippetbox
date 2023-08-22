@@ -34,7 +34,7 @@ func (app *application) routes() http.Handler {
 	fileServer := http.FileServer(http.FS(ui.Files))
 	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
 
-	// Add a Get/ping route.
+	// Add a GET /ping route.
 	router.HandlerFunc(http.MethodGet, "/ping", ping)
 
 	// Create a middleware chain containing the middleware specific to our

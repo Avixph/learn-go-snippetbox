@@ -44,6 +44,7 @@ func newTestApplication(t *testing.T) *application {
 		t.Fatal(err)
 	}
 
+	// Add a form decoder.
 	formDecoder := form.NewDecoder()
 
 	// Create a session manager instance using the same settings as production,

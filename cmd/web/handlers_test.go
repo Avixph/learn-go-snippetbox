@@ -26,7 +26,7 @@ func TestPing(t *testing.T) {
 	// Check the value of the response status code and body using the same pattern
 	// as before.
 	assert.Equal(t, code, http.StatusOK)
-
+	// assert.Equal(t, body, "OK")
 	assert.Equal(t, string(body), "OK")
 }
 

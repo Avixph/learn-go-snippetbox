@@ -18,7 +18,8 @@ var mockSnippet = &models.Snippet{
 type SnippetModel struct{}
 
 func (m *SnippetModel) Insert(title string, content string, expireVal int) (string, error) {
-	return "9c1fe9ac-b67c-4ba5-9530-208ac6985e0d", nil
+	return uuid.New().String(), nil
+	// return "9c1fe9ac-b67c-4ba5-9530-208ac6985e0d", nil
 }
 
 func (m *SnippetModel) Get(id uuid.UUID) (*models.Snippet, error) {

@@ -10,7 +10,7 @@ import (
 	"github.com/Avixph/learn-go-snippetbox/internal/assert"
 )
 
-func TestSecureHEaders(t *testing.T) {
+func TestSecureHeaders(t *testing.T) {
 	// Initialize a new httptest.ResponseRecorder and dummy http.Request.
 	rr := httptest.NewRecorder()
 
