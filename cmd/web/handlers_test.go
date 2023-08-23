@@ -102,7 +102,7 @@ func TestUserSignup(t *testing.T) {
 
 	const (
 		validName     = "Nom Falso"
-		validPassword = "pa$$w0rd8923"
+		validPassword = "1376p@$$w0rd8923"
 		validEmail    = "falso@example.com"
 		formTag       = `<form action="/user/signup" method="POST" novalidate>`
 	)
@@ -216,7 +216,6 @@ func TestSnippetCreate(t *testing.T) {
 		code, headers, _ := ts.get(t, "/snippet/create")
 
 		assert.Equal(t, code, http.StatusSeeOther)
-
 		assert.Equal(t, headers.Get("Location"), "/user/login")
 	})
 
@@ -244,6 +243,6 @@ func TestSnippetCreate(t *testing.T) {
 		code, _, body := ts.get(t, "/snippet/create")
 
 		assert.Equal(t, code, http.StatusOK)
-		assert.Equal(t, body, validFormTag)
+		assert.StringContains(t, body, validFormTag)
 	})
 }

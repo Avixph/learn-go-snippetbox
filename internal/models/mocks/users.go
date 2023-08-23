@@ -7,7 +7,7 @@ import (
 
 type UserModel struct{}
 
-var uid = uuid.New()
+var uid = uuid.MustParse("6ba7b811-9dad-11d1-80b4-00c04fd430c8")
 
 func (m *UserModel) Insert(name, email, password string) error {
 	switch email {
