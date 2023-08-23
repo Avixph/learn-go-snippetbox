@@ -28,7 +28,13 @@ type templateData struct {
 // Create a humanDate func that returns a nicely formatted string
 // representation of time.Time object.
 func humanDate(t time.Time) string {
-	return t.Format("02 Jan 2006 at 15:04")
+	// Return the empty string if time has the zero value.
+	if t.IsZero() {
+		return ""
+	}
+
+	// Convert the time.Time object to UTC and return as a formatted string.
+	return t.UTC().Format("02 Jan 2006 at 15:04")
 }
 
 // Initialize a template.FuncMap object and store it in a global variable.
@@ -64,9 +70,9 @@ func newTemplateCache() (map[string]*template.Template, error) {
 			page,
 		}
 
-		// The template.FuncMap must be registered with the template set before calling 
-		// the ParseFS() method. This means we have to use template.New() to create an 
-		// empty template set, use the Funcs() method to register the template.FuncMap, 
+		// The template.FuncMap must be registered with the template set before calling
+		// the ParseFS() method. This means we have to use template.New() to create an
+		// empty template set, use the Funcs() method to register the template.FuncMap,
 		// and then parse the tempalte file.
 		ts, err := template.New(name).Funcs(templFunctions).ParseFS(ui.Files, patterns...)
 		if err != nil {

@@ -26,8 +26,8 @@ import (
 type application struct {
 	errorLog       *log.Logger
 	infoLog        *log.Logger
-	snippets       *models.SnippetModel
-	users          *models.UserModel
+	snippets       models.SnippetModelInterface
+	users          models.UserModelInterface
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
@@ -171,14 +171,12 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
-// CREATE TABLE  users (
-//     id uuid DEFAULT uuid_generate_v4() NOT NULL,
-//     name VARCHAR(255) NOT NULL,
-//     email VARCHAR(255) NOT NULL,
-//     hashed_password CHAR(60) NOT NULL,
-//     created_on TIMESTAMP NOT NULL,
-//     PRIMARY KEY (id)
-// );
+// CREATE DATABASE test_snippetbox WITH ENCODING 'UTF8' LC_COLLATE='en_US.UTF-8' LC_CTYPE='en_US.UTF-8' TEMPLATE=template0;
+
+// CREATE USER test_web WITH PASSWORD 'learn-go-snippetbox';
+// // GRANT CREATE, SELECT, INSERT, UPDATE, DELETE ON DATABASE test_snippetbox TO test_web;
+// GRANT ALL ON DATABASE test_snippetbox TO test_web;
+// REVOKE TEMPORARY ON DATABASE test_snippetbox FROM test_web;
 
 // INSERT INTO snippets (title, content, created_on, updated_on, expires_on) VALUES (
 //     'First autumn morning',
@@ -187,3 +185,4 @@ func openDB(dsn string) (*sql.DB, error) {
 //     (now() at time zone 'utc'),
 //                 (now() at time zone 'utc' + interval '7 day')
 // );
+

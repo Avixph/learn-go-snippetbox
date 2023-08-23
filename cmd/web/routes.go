@@ -34,10 +34,13 @@ func (app *application) routes() http.Handler {
 	fileServer := http.FileServer(http.FS(ui.Files))
 	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
 
+	// Add a GET /ping route.
+	router.HandlerFunc(http.MethodGet, "/ping", ping)
+
 	// Create a middleware chain containing the middleware specific to our
 	// unprotected application routes using the "dynamic" middleware chain.
-	// Use the noSurf middleware on all our 'dynamic' routes.
-	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
+	// Use the noSurf and authenticate middleware on all our 'dynamic' routes.
+	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 
 	// Register the home, snippetView and snippetCreate funcs as handlers for the
 	// corrisponding URL patrerns with the serverrouter. Swap the route

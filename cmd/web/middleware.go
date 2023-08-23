@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/justinas/nosurf"
 )
 
@@ -80,4 +82,37 @@ func noSurf(next http.Handler) http.Handler {
 	})
 
 	return csrfHandler
+}
+
+func (app *application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Retrieve the authenticatedUserID value from the session using the
+		// GetString() method. This will the string value if no
+		// "authenticatedUserID" value is in the session -- in which case we call
+		// the next handler in the chain as normal and return.
+		id := app.sessionManager.GetString(r.Context(), "authenticatedUserID")
+		if id == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Else, check if a user with that id exists in our database.
+		exists, err := app.users.Exists(uuid.MustParse(id))
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		// If a matching user is found, we know that the request is coming from an
+		// authenticated user who exists in our database. We create a new copy of
+		// the request (with an isAuthenticatedContextKey value of true in the request
+		// context) and assign it to r.
+		if exists {
+			ctx := context.WithValue(r.Context(), isAuthenticatedCOntextKey, true)
+			r = r.WithContext(ctx)
+		}
+
+		// Call the next handler in the chain.
+		next.ServeHTTP(w, r)
+	})
 }
