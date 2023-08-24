@@ -17,6 +17,7 @@ type UserModelInterface interface {
 	Insert(name, email, password string) error
 	Authenticate(email, password string) (string, error)
 	Exists(id uuid.UUID) (bool, error)
+	Get(id uuid.UUID) (*User, error)
 }
 
 // Define a User type.
@@ -120,4 +121,26 @@ func (m *UserModel) Exists(id uuid.UUID) (bool, error) {
 	err := row.Scan(&exists)
 
 	return exists, err
+}
+
+// The Get() method will return the specific user's information
+// from the database.
+func (m *UserModel) Get(id uuid.UUID) (*User, error) {
+	// Initialize a pointer to a User struct.
+	u := &User{}
+
+	// Define the sql query to retrive the user.
+	query := `SELECT id, name, email, created_on FROM users WHERE id = $1`
+
+	row := m.DB.QueryRow(query, id)
+	err := row.Scan(&u.ID, &u.Name, &u.Email, &u.CreatedOn)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	return u, nil
 }

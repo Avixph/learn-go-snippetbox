@@ -65,6 +65,7 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, "/snippet/create", protected.ThenFunc(app.snippetCreateForm))
 	router.Handler(http.MethodPost, "/snippet/create", protected.ThenFunc(app.snippetCreate))
+	router.Handler(http.MethodGet, "/account/view", protected.ThenFunc(app.accountView))
 	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogout))
 
 	// Create a middleware chain containing our 'standard' middleware (app.recoverPanic,

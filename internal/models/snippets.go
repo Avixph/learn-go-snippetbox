@@ -65,6 +65,9 @@ func (m *SnippetModel) Insert(title string, content string, expireVal int) (stri
 
 // The Get() method will return a specific snippet from the database.
 func (m *SnippetModel) Get(id uuid.UUID) (*Snippet, error) {
+	// Initialize a pointer to a new zeroed Snippet struct.
+	s := &Snippet{}
+
 	// Define the SQL query we want to execute.
 	query := `SELECT id, title, content, created_on, expires_on FROM snippets
 	WHERE expires_on > now() AND id = $1`
@@ -74,9 +77,6 @@ func (m *SnippetModel) Get(id uuid.UUID) (*Snippet, error) {
 	// parameter. This returns a pointer to a sql.Row object which holds the
 	// result from the database.
 	row := m.DB.QueryRow(query, id)
-
-	// Initialize a pointer to a new zeroed Snippet struct.
-	s := &Snippet{}
 
 	// Use row.Scan() to copy the values from each field in sql.Row to the
 	// corresponding field in the Snippet struct. Notice that the arguments

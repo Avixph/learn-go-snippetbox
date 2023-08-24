@@ -2,9 +2,9 @@
 <nav>
   <div>
     <a href="/">Home</a>
-    <!-- Add link to the About page. -->
+    <!-- Add link to the About page -->
     <a href="/about">About</a>
-    <!-- Add a link to the new form  -->
+    <!-- Add link to the new form  -->
     <!-- Toggle the link based on authentication status  -->
     {{if .IsAuthenticated}}
     <a href="/snippet/create">Create Snippet</a>
@@ -13,6 +13,8 @@
   <div>
     <!-- Toggle the links based on the authentication status  -->
     {{if .IsAuthenticated}}
+    <!-- Add link to account page -->
+    <a href='/account/view'>Account</a>
     <form action="/user/logout" method="POST">
       <!-- Include the CSRF token  -->
       <input type="hidden" name="csrf_token" value="{{.CSRFToken}}" />

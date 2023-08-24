@@ -1,6 +1,8 @@
 package mocks
 
 import (
+	"time"
+
 	"github.com/Avixph/learn-go-snippetbox/internal/models"
 	"github.com/google/uuid"
 )
@@ -35,4 +37,19 @@ func (m *UserModel) Exists(id uuid.UUID) (bool, error) {
 	default:
 		return false, nil
 	}
+}
+
+func (m *UserModel) Get(id uuid.UUID) (*models.User, error) {
+	if id == uid {
+		u := &models.User{
+			ID:        uid,
+			Name:      "Nom Falso",
+			Email:     "falso@example.com",
+			CreatedOn: time.Now(),
+		}
+
+		return u, nil
+	}
+
+	return nil, models.ErrNoRecord
 }
