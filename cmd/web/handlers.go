@@ -36,6 +36,15 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "home.html", templData)
 }
 
+// Define a about handler func.
+func (app *application) about(w http.ResponseWriter, r *http.Request) {
+	// Call the newTemplateData() helper.
+	templData := app.newTemplateData(r)
+
+	// Call the render helper.
+	app.render(w, http.StatusOK, "about.html", templData)
+}
+
 // Define a snippetView handler func
 // Change the signature if the snippetView handler so it is defined as a
 // method against *application.
