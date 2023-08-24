@@ -22,8 +22,9 @@ import (
 // Add a snippets field to the application struct. This will allow us to
 // make the SnippetModel object available to our handlers.
 // Addd a templateCache feild, formDecoder field, a sessionManager field,
-// and a users field to the application struct.
+// a users field and a debug field to the application struct.
 type application struct {
+	debug          bool
 	errorLog       *log.Logger
 	infoLog        *log.Logger
 	snippets       models.SnippetModelInterface
@@ -42,6 +43,9 @@ func main() {
 
 	// Define a new command-line flag for the PostgreSQL DSN string.
 	dsn := flag.String("dsn", getEnvVariables("DATABASE_URL"), "PostgresSQL data source name")
+
+	// Define a new debug flag with a defualt value of false.
+	debug := flag.Bool("debug", false, "Enable debug mode")
 
 	// Importantly, we use the flag.Parse() func to parse the command-line
 	// flag. This reads in the command-line flag value and assigns it to the
@@ -99,9 +103,10 @@ func main() {
 	// dependencies.
 	// Initialize a models.SnippetModel instance and add it to the
 	// application dependencies.
-	// Add a templateCache, a formDecoder, a sessionManager, and models.
-	// UserModel to the application dependencies.
+	// Add a templateCache, a formDecoder, a sessionManager, a models.
+	// UserModel, and a debug to the application dependencies.
 	app := &application{
+		debug:          *debug,
 		errorLog:       errorLog,
 		infoLog:        infoLog,
 		snippets:       &models.SnippetModel{DB: db},
@@ -185,4 +190,3 @@ func openDB(dsn string) (*sql.DB, error) {
 //     (now() at time zone 'utc'),
 //                 (now() at time zone 'utc' + interval '7 day')
 // );
-
