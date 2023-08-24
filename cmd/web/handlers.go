@@ -304,6 +304,7 @@ func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		templData := app.newTemplateData(r)
 		templData.Form = form
+
 		app.render(w, http.StatusUnprocessableEntity, "login.html", templData)
 		return
 	}
@@ -338,6 +339,13 @@ func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 	// 'logged in'.
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
 
+	// Use the PopString method to retrieve and remove the "redirectPathAfterLogin"
+	// value from the session data. If no matching key exists then return an empty
+	// string.
+	path := app.sessionManager.PopString(r.Context(), "redirectPathAfterLogin")
+	if path != "" {
+		http.Redirect(w, r, path, http.StatusSeeOther)
+	}
 	// Redirect the user to the create snippet page.
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 
@@ -369,12 +377,9 @@ func ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
-	// id := app.sessionManager.GetString(r.Context(), "authenticatedUserID")
+	id := app.sessionManager.GetString(r.Context(), "authenticatedUserID")
 
-	// user, err := app.users.Get(uuid.MustParse(id))
-	id := uuid.MustParse(app.sessionManager.GetString(r.Context(), "authenticatedUserID"))
-
-	user, err := app.users.Get(id)
+	user, err := app.users.Get(uuid.MustParse(id))
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)

@@ -58,6 +58,8 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 		// return from the middleware chain so that no subsequent handlers in the
 		// chain are executed.
 		if !app.isAuthenticated(r) {
+			// Add the path the user is trying to access to the sesion data.
+			app.sessionManager.Put(r.Context(), "redirectPathAfterLogin", r.URL.Path)
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 		}
 
