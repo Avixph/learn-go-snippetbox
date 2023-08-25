@@ -36,6 +36,15 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "home.html", templData)
 }
 
+// Define a about handler func.
+func (app *application) about(w http.ResponseWriter, r *http.Request) {
+	// Call the newTemplateData() helper.
+	templData := app.newTemplateData(r)
+
+	// Call the render helper.
+	app.render(w, http.StatusOK, "about.html", templData)
+}
+
 // Define a snippetView handler func
 // Change the signature if the snippetView handler so it is defined as a
 // method against *application.
@@ -295,6 +304,7 @@ func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		templData := app.newTemplateData(r)
 		templData.Form = form
+
 		app.render(w, http.StatusUnprocessableEntity, "login.html", templData)
 		return
 	}
@@ -329,6 +339,13 @@ func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 	// 'logged in'.
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
 
+	// Use the PopString method to retrieve and remove the "redirectPathAfterLogin"
+	// value from the session data. If no matching key exists then return an empty
+	// string.
+	path := app.sessionManager.PopString(r.Context(), "redirectPathAfterLogin")
+	if path != "" {
+		http.Redirect(w, r, path, http.StatusSeeOther)
+	}
 	// Redirect the user to the create snippet page.
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 
@@ -357,4 +374,86 @@ func (app *application) userLogout(w http.ResponseWriter, r *http.Request) {
 
 func ping(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
+}
+
+func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
+	id := app.sessionManager.GetString(r.Context(), "authenticatedUserID")
+
+	user, err := app.users.Get(uuid.MustParse(id))
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	// fmt.Fprintf(w, "%+v", user)
+
+	// Call the newTemplateData() helper.
+	templData := app.newTemplateData(r)
+	templData.User = user
+
+	// Call the render helper.
+	app.render(w, http.StatusOK, "account.html", templData)
+}
+
+type passwordUpdateForm struct {
+	CurrentPassword         string `form:"currentPassword"`
+	NewPassword             string `form:"newPassword"`
+	NewPasswordConfirmation string `form:"newPasswordConfirmation"`
+	validator.Validator     `form:"-"`
+}
+
+func (app *application) userPasswordUpdateForm(w http.ResponseWriter, r *http.Request) {
+	templData := app.newTemplateData(r)
+	templData.Form = passwordUpdateForm{}
+
+	app.render(w, http.StatusOK, "password.html", templData)
+}
+
+func (app *application) userPasswordUpdate(w http.ResponseWriter, r *http.Request) {
+	var form passwordUpdateForm
+
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(validator.NotBlank(form.CurrentPassword), "currentPassword", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.NewPassword), "newPassword", "This field cannot be blank")
+	form.CheckField(validator.MinChars(form.NewPassword, 16), "newPassword", "This field must be at least 16 characters long")
+	form.CheckField(validator.NotBlank(form.NewPasswordConfirmation), "newPasswordConfirmation", "This field cannot be blank")
+	form.CheckField(form.NewPassword == form.NewPasswordConfirmation, "newPasswordConfirmation", "Passwords do not match")
+
+	if !form.Valid() {
+		templData := app.newTemplateData(r)
+		templData.Form = passwordUpdateForm{}
+
+		app.render(w, http.StatusUnprocessableEntity, "password.html", templData)
+		return
+	}
+
+	userID := app.sessionManager.GetString(r.Context(), "authenticatedUserID")
+
+	err = app.users.PasswordUpdate(uuid.MustParse(userID), form.CurrentPassword, form.NewPassword)
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddFieldError("currentPassword", "Current password is incorrect")
+
+			templData := app.newTemplateData(r)
+			templData.Form = form
+
+			app.render(w, http.StatusUnprocessableEntity, "password.html", templData)
+		} else if err != nil {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	app.sessionManager.Put(r.Context(), "flash", "Your password has been updated!")
+
+	http.Redirect(w, r, "/account/view", http.StatusSeeOther)
 }

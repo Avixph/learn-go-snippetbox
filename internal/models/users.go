@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -17,6 +18,8 @@ type UserModelInterface interface {
 	Insert(name, email, password string) error
 	Authenticate(email, password string) (string, error)
 	Exists(id uuid.UUID) (bool, error)
+	Get(id uuid.UUID) (*User, error)
+	PasswordUpdate(id uuid.UUID, currentPassord, newPassword string) error
 }
 
 // Define a User type.
@@ -43,7 +46,7 @@ func (m *UserModel) Insert(name, email, password string) error {
 
 	query := `INSERT INTO users (name, email, hashed_password, created_on)
 		VALUES ($1, $2, $3, (now() at time zone 'utc'))
-		RETURNING ID`
+		RETURNING id`
 
 	args := []any{name, email, hashedPassword}
 
@@ -120,4 +123,65 @@ func (m *UserModel) Exists(id uuid.UUID) (bool, error) {
 	err := row.Scan(&exists)
 
 	return exists, err
+}
+
+// The Get() method will return the specific user's information
+// from the database.
+func (m *UserModel) Get(id uuid.UUID) (*User, error) {
+	// Initialize a pointer to a User struct.
+	u := &User{}
+
+	// Define the sql query to retrive the user.
+	query := `SELECT id, name, email, created_on FROM users WHERE id = $1`
+
+	row := m.DB.QueryRow(query, id)
+	err := row.Scan(&u.ID, &u.Name, &u.Email, &u.CreatedOn)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	return u, nil
+}
+
+func (m *UserModel) PasswordUpdate(id uuid.UUID, currentPassword, newPassword string) error {
+	var currentHashedPassword []byte
+
+	query := `SELECT hashed_password FROM users WHERE id = $1`
+
+	row := m.DB.QueryRow(query, id)
+	err := row.Scan(&currentHashedPassword)
+	fmt.Printf("Your row.Scan(&currentHashedPassword): \n%v", err)
+	if err != nil {
+		return err
+	}
+
+	err = bcrypt.CompareHashAndPassword(currentHashedPassword, []byte(currentPassword))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return ErrInvalidCredentials
+		} else {
+			return err
+		}
+	}
+
+	hashedPaswordUpdate, err := bcrypt.GenerateFromPassword([]byte(newPassword), 12)
+	if err != nil {
+		return err
+	}
+
+	query = `UPDATE users SET hashed_password = $1 WHERE id = $2 RETURNING id`
+
+	args := []any{string(hashedPaswordUpdate), id}
+
+	var email string
+
+	row = m.DB.QueryRow(query, args...)
+	err = row.Scan(&email)
+	fmt.Printf("Your row.Scan(&email): \n%v", err)
+
+	return err
 }

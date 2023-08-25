@@ -50,6 +50,8 @@ func (app *application) routes() http.Handler {
 	// an http.Handler() instead of an http.HandlerFunc() we also need to switch
 	// to registering the route using the router.Hanler() method.
 	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
+	// Add the About route.
+	router.Handler(http.MethodGet, "/about", dynamic.ThenFunc(app.about))
 	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))
 	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignupForm))
 	router.Handler(http.MethodPost, "/user/signup", dynamic.ThenFunc(app.userSignup))
@@ -63,6 +65,9 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, "/snippet/create", protected.ThenFunc(app.snippetCreateForm))
 	router.Handler(http.MethodPost, "/snippet/create", protected.ThenFunc(app.snippetCreate))
+	router.Handler(http.MethodGet, "/account/view", protected.ThenFunc(app.accountView))
+	router.Handler(http.MethodGet, "/account/password/update", protected.ThenFunc(app.userPasswordUpdateForm))
+	router.Handler(http.MethodPost, "/account/password/update", protected.ThenFunc(app.userPasswordUpdate))
 	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogout))
 
 	// Create a middleware chain containing our 'standard' middleware (app.recoverPanic,
