@@ -21,7 +21,7 @@ func (m *UserModel) Insert(name, email, password string) error {
 }
 
 func (m *UserModel) Authenticate(email, password string) (string, error) {
-	if email == "falso@example.com" && password == "pa$$w0rd8923" {
+	if email == "falso@example.com" && password == "1376p@$$w0rd8923" {
 		return uid.String(), nil
 		// return "6ba7b811-9dad-11d1-80b4-00c04fd430c8", nil
 	}
@@ -52,4 +52,16 @@ func (m *UserModel) Get(id uuid.UUID) (*models.User, error) {
 	}
 
 	return nil, models.ErrNoRecord
+}
+
+func (m *UserModel) PasswordUpdate(id uuid.UUID, currentPassword, newPassword string) error {
+	if id == uid {
+		if currentPassword != "1376p@$$w0rd8923" {
+			return models.ErrInvalidCredentials
+		}
+
+		return nil
+	}
+
+	return models.ErrNoRecord
 }

@@ -37,7 +37,7 @@ func (m *SnippetModel) Insert(title string, content string, expireVal int) (stri
 	// Define the SQL query we want to execute.
 	query := `INSERT INTO snippets (title, content, created_on, expires_on)
 		VALUES ($1, $2, (now() at time zone 'utc'), (now() at time zone 'utc' + $3 * interval '1 day'))
-		RETURNING ID`
+		RETURNING id`
 
 	// Create an args slice containing the values for the placeholder
 	// parameters. The first parameter is the stmt var, followed by the

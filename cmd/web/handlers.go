@@ -398,3 +398,62 @@ func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
 	// Call the render helper.
 	app.render(w, http.StatusOK, "account.html", templData)
 }
+
+type passwordUpdateForm struct {
+	CurrentPassword         string `form:"currentPassword"`
+	NewPassword             string `form:"newPassword"`
+	NewPasswordConfirmation string `form:"newPasswordConfirmation"`
+	validator.Validator     `form:"-"`
+}
+
+func (app *application) userPasswordUpdateForm(w http.ResponseWriter, r *http.Request) {
+	templData := app.newTemplateData(r)
+	templData.Form = passwordUpdateForm{}
+
+	app.render(w, http.StatusOK, "password.html", templData)
+}
+
+func (app *application) userPasswordUpdate(w http.ResponseWriter, r *http.Request) {
+	var form passwordUpdateForm
+
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(validator.NotBlank(form.CurrentPassword), "currentPassword", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.NewPassword), "newPassword", "This field cannot be blank")
+	form.CheckField(validator.MinChars(form.NewPassword, 16), "newPassword", "This field must be at least 16 characters long")
+	form.CheckField(validator.NotBlank(form.NewPasswordConfirmation), "newPasswordConfirmation", "This field cannot be blank")
+	form.CheckField(form.NewPassword == form.NewPasswordConfirmation, "newPasswordConfirmation", "Passwords do not match")
+
+	if !form.Valid() {
+		templData := app.newTemplateData(r)
+		templData.Form = passwordUpdateForm{}
+
+		app.render(w, http.StatusUnprocessableEntity, "password.html", templData)
+		return
+	}
+
+	userID := app.sessionManager.GetString(r.Context(), "authenticatedUserID")
+
+	err = app.users.PasswordUpdate(uuid.MustParse(userID), form.CurrentPassword, form.NewPassword)
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddFieldError("currentPassword", "Current password is incorrect")
+
+			templData := app.newTemplateData(r)
+			templData.Form = form
+
+			app.render(w, http.StatusUnprocessableEntity, "password.html", templData)
+		} else if err != nil {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	app.sessionManager.Put(r.Context(), "flash", "Your password has been updated!")
+
+	http.Redirect(w, r, "/account/view", http.StatusSeeOther)
+}
